@@ -12,7 +12,9 @@
     "test": "turbo test",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
-    "clean": "turbo clean"
+    "clean": "turbo clean",
+    "play": "bash scripts/play.sh",
+    "play:starter": "bash scripts/play.sh ./examples/starter-campaign"
   },
   "devDependencies": {
     "turbo": "^2.5.0",

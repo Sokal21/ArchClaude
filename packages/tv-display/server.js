@@ -13,7 +13,8 @@ import { dirname } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = join(__dirname, "public");
-const port = parseInt(process.argv[process.argv.indexOf("--port") + 1] || "3200", 10);
+const portIdx = process.argv.indexOf("--port");
+const port = portIdx !== -1 && process.argv[portIdx + 1] ? parseInt(process.argv[portIdx + 1], 10) : 3200;
 
 const MIME_TYPES = {
   ".html": "text/html",
