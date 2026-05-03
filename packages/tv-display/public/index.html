@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ArchClaude — Battle Map</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Top bar: initiative tracker -->
+    <div id="initiative-bar">
+      <h3>Initiative</h3>
+      <div id="initiative-list"></div>
+    </div>
+
+    <!-- Main area: battle map -->
+    <div id="map-container">
+      <canvas id="map-canvas"></canvas>
+      <div id="no-map-message">No active battle map. Waiting for combat...</div>
+    </div>
+
+    <!-- Right sidebar: party status -->
+    <div id="party-sidebar">
+      <h3>Party</h3>
+      <div id="party-list"></div>
+    </div>
+
+    <!-- Bottom: narration feed -->
+    <div id="narration-bar">
+      <div id="narration-text"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

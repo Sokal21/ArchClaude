@@ -26,6 +26,11 @@ Add to your `.claude/settings.json` or Cowork MCP configuration:
       "env": {
         "CAMPAIGN_DIR": "<campaign-dir>"
       }
+    },
+    "archclaude-map": {
+      "command": "node",
+      "args": ["<repo>/packages/map/dist/index.js", "--campaign", "<campaign-dir>"],
+      "env": {}
     }
   }
 }
@@ -76,6 +81,29 @@ Replace:
 | `get_condition` | Condition rules | Combat Director |
 | `list_homebrew` | Campaign homebrew | Encounter Builder |
 
+### Map MCP (archclaude-map)
+
+WebSocket server on port 3100 for the TV display renderer.
+
+| Tool | Purpose | Used by |
+|------|---------|---------|
+| `create_map` / `get_map` / `clear_map` / `save_map` | Map lifecycle | Orchestrator |
+| `place_token` / `move_token` / `remove_token` | Token management | Combat Director |
+| `set_token_visibility` / `update_token_conditions` | Token state | Combat Director |
+| `set_terrain` / `set_terrain_rect` | Terrain placement | Orchestrator / Encounter Builder |
+| `measure_distance` | Distance between tokens (5e Chebyshev) | Combat Director |
+| `get_visible` | Line-of-sight check through walls | Combat Director |
+| `query_in_range` | Find tokens within range | Combat Director |
+| `apply_aoe` | AoE shapes (circle/cone/line/cube) | Combat Director |
+| `broadcast_narration` | Send narration to TV display | Orchestrator |
+| `broadcast_initiative` | Update initiative bar on TV | Combat Director |
+| `broadcast_party_status` | Update party HP bars on TV | Combat Director |
+
+### TV Display (http://localhost:3200)
+
+Web app that renders the battle map, initiative tracker, party status, and narration feed.
+Start with: `pnpm --filter @archclaude/tv-display start`
+
 ## Data Flow
 
 ```
@@ -88,9 +116,11 @@ Player input → Orchestrator → [mode detection]
  State MCP    State MCP    Combat Director
  (locations,  (NPCs,       (sub-agent)
   clock,       quests,          ↓
-  memory)      secrets)    State MCP + Bestiary MCP
-                           (damage, conditions,
-                            stat blocks, spells)
+  memory)      secrets)    State MCP + Bestiary MCP + Map MCP
+                           (damage, conditions, positions,
+                            stat blocks, spells, LoS, AoE)
+                                 ↓ (WebSocket)
+                           TV Display (map, initiative, HP, narration)
 ```
 
 ## System Boundaries

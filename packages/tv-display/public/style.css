@@ -1,0 +1,175 @@
+/*
+ * TV Display styles — designed for a wall-mounted TV at the game table.
+ * Dark theme, large text, high contrast.
+ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  overflow: hidden;
+  height: 100vh;
+}
+
+#app {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  grid-template-rows: 60px 1fr 100px;
+  height: 100vh;
+  gap: 2px;
+}
+
+/* Initiative bar — top, spans full width */
+#initiative-bar {
+  grid-column: 1 / -1;
+  background: #16213e;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 16px;
+  overflow-x: auto;
+}
+
+#initiative-bar h3 {
+  color: #e94560;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+#initiative-list {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+
+.init-entry {
+  background: #0f3460;
+  border: 2px solid #333;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 14px;
+  white-space: nowrap;
+  transition: all 0.3s;
+}
+
+.init-entry.active {
+  background: #e94560;
+  border-color: #e94560;
+  color: #fff;
+  font-weight: bold;
+  transform: scale(1.1);
+}
+
+.init-entry .init-roll {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+/* Map container */
+#map-container {
+  background: #0f3460;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#map-canvas {
+  display: none;
+}
+
+#no-map-message {
+  color: #555;
+  font-size: 24px;
+  font-style: italic;
+}
+
+/* Party sidebar */
+#party-sidebar {
+  background: #16213e;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+#party-sidebar h3 {
+  color: #e94560;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.pc-card {
+  background: #0f3460;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+.pc-card .pc-name {
+  font-weight: bold;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.pc-card .hp-bar-container {
+  background: #333;
+  border-radius: 4px;
+  height: 12px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.pc-card .hp-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.pc-card .hp-text {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.pc-card .conditions {
+  font-size: 11px;
+  color: #e94560;
+  margin-top: 4px;
+}
+
+/* Narration bar — bottom */
+#narration-bar {
+  grid-column: 1 / -1;
+  background: #16213e;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+#narration-text {
+  font-size: 18px;
+  line-height: 1.4;
+  font-style: italic;
+  color: #ccc;
+  max-height: 76px;
+  overflow: hidden;
+}
+
+#narration-text.intensity-tense {
+  color: #e94560;
+  font-size: 20px;
+}
+
+#narration-text.intensity-climax {
+  color: #ff6b6b;
+  font-size: 22px;
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+}
+
+/* Terrain colors on canvas are handled in JS */
