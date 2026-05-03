@@ -171,4 +171,117 @@ export function registerPCTools(server: McpServer, db: CampaignDB) {
       };
     },
   );
+
+  // ── Death saves ──
+
+  server.tool(
+    "record_death_save",
+    "Record a death saving throw for a PC at 0 HP. 3 successes = stabilize, 3 failures = death.",
+    {
+      name: z.string().describe("PC name"),
+      success: z.boolean().describe("true = success, false = failure"),
+    },
+    async ({ name, success }) => {
+      const pc = dal.getByName(name);
+      if (!pc) return { content: [{ type: "text", text: `PC "${name}" not found.` }] };
+      const updated = dal.recordDeathSave(pc.id, success);
+      const s = updated.death_save_successes;
+      const f = updated.death_save_failures;
+      let status = `${name} death saves: ${s} success, ${f} failure`;
+      if (s >= 3) status += " — STABILIZED!";
+      if (f >= 3) status += " — DEAD.";
+      return { content: [{ type: "text", text: status }] };
+    },
+  );
+
+  server.tool(
+    "reset_death_saves",
+    "Reset a PC's death save counters (after stabilizing, healing, or long rest).",
+    { name: z.string() },
+    async ({ name }) => {
+      const pc = dal.getByName(name);
+      if (!pc) return { content: [{ type: "text", text: `PC "${name}" not found.` }] };
+      dal.resetDeathSaves(pc.id);
+      return { content: [{ type: "text", text: `${name} death saves reset.` }] };
+    },
+  );
+
+  // ── Rest ──
+
+  server.tool(
+    "long_rest",
+    "Apply long rest to a PC: restore HP to max, reset spell slots, clear conditions, reset death saves.",
+    { name: z.string() },
+    async ({ name }) => {
+      const pc = dal.getByName(name);
+      if (!pc) return { content: [{ type: "text", text: `PC "${name}" not found.` }] };
+      const updated = dal.longRest(pc.id);
+      return {
+        content: [{
+          type: "text",
+          text: `${name} long rest complete. HP: ${updated.current_hp}/${updated.max_hp}. Spell slots restored. Conditions cleared.`,
+        }],
+      };
+    },
+  );
+
+  server.tool(
+    "short_rest",
+    "Apply short rest to a PC: heal using hit dice.",
+    {
+      name: z.string(),
+      hit_dice_healing: z.number().describe("Total HP restored from hit dice rolls"),
+    },
+    async ({ name, hit_dice_healing }) => {
+      const pc = dal.getByName(name);
+      if (!pc) return { content: [{ type: "text", text: `PC "${name}" not found.` }] };
+      const updated = dal.shortRest(pc.id, hit_dice_healing);
+      return {
+        content: [{
+          type: "text",
+          text: `${name} short rest: healed ${hit_dice_healing} HP. Now at ${updated.current_hp}/${updated.max_hp}.`,
+        }],
+      };
+    },
+  );
+
+  // ── Condition tick ──
+
+  server.tool(
+    "tick_conditions",
+    "Decrement duration-based conditions by 1 round for a PC. Removes expired conditions. Call at the start of each round.",
+    { name: z.string() },
+    async ({ name }) => {
+      const pc = dal.getByName(name);
+      if (!pc) return { content: [{ type: "text", text: `PC "${name}" not found.` }] };
+      const result = dal.tickConditions(pc.id);
+      let text = `${name} conditions ticked.`;
+      if (result.removed.length > 0) text += ` Expired: ${result.removed.join(", ")}.`;
+      if (result.remaining.length > 0) text += ` Active: ${result.remaining.join(", ")}.`;
+      else text += " No active conditions.";
+      return { content: [{ type: "text", text }] };
+    },
+  );
+
+  // ── Concentration ──
+
+  server.tool(
+    "set_concentration",
+    "Set or clear what a PC is concentrating on.",
+    {
+      name: z.string(),
+      spell: z.string().nullable().describe("Spell name, or null to clear concentration"),
+    },
+    async ({ name, spell }) => {
+      const pc = dal.getByName(name);
+      if (!pc) return { content: [{ type: "text", text: `PC "${name}" not found.` }] };
+      dal.update(pc.id, { concentrating_on: spell });
+      return {
+        content: [{
+          type: "text",
+          text: spell ? `${name} is concentrating on ${spell}.` : `${name} concentration cleared.`,
+        }],
+      };
+    },
+  );
 }

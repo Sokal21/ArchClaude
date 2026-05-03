@@ -27,6 +27,9 @@ interface PCRow {
   voice_profile: string | null;
   active: number;
   notes: string | null;
+  death_save_successes: number;
+  death_save_failures: number;
+  concentrating_on: string | null;
 }
 
 function rowToPC(row: PCRow): PC {
@@ -154,5 +157,81 @@ export class PCDAL {
 
   delete(id: number): boolean {
     return this.db.prepare("DELETE FROM pcs WHERE id = ?").run(id).changes > 0;
+  }
+
+  // ── Death saves ──
+
+  recordDeathSave(id: number, success: boolean): PC {
+    const field = success ? "death_save_successes" : "death_save_failures";
+    this.db.prepare(`UPDATE pcs SET ${field} = ${field} + 1 WHERE id = ?`).run(id);
+    return this.getById(id)!;
+  }
+
+  resetDeathSaves(id: number): PC {
+    this.db
+      .prepare("UPDATE pcs SET death_save_successes = 0, death_save_failures = 0 WHERE id = ?")
+      .run(id);
+    return this.getById(id)!;
+  }
+
+  // ── Rest mechanics ──
+
+  longRest(id: number): PC {
+    const pc = this.getById(id);
+    if (!pc) throw new Error(`PC ${id} not found`);
+
+    const updates: Partial<PC> = {
+      current_hp: pc.max_hp,
+      temp_hp: 0,
+      death_save_successes: 0,
+      death_save_failures: 0,
+      conditions_json: [], // clear all conditions
+      concentrating_on: null,
+    };
+
+    // Reset spell slots to max
+    if (pc.spell_slots_json) {
+      updates.spell_slots_json = {
+        max: pc.spell_slots_json.max,
+        current: { ...pc.spell_slots_json.max },
+      };
+    }
+
+    return this.update(id, updates);
+  }
+
+  shortRest(id: number, hitDiceHealing: number): PC {
+    const pc = this.getById(id);
+    if (!pc) throw new Error(`PC ${id} not found`);
+    const newHp = Math.min(pc.max_hp, pc.current_hp + hitDiceHealing);
+    return this.update(id, { current_hp: newHp });
+  }
+
+  // ── Condition tick (for round-based durations) ──
+
+  tickConditions(id: number): { removed: string[]; remaining: string[] } {
+    const pc = this.getById(id);
+    if (!pc || !pc.conditions_json) return { removed: [], remaining: [] };
+
+    const removed: string[] = [];
+    const remaining: string[] = [];
+
+    for (const condition of pc.conditions_json) {
+      const parts = condition.split(":");
+      if (parts.length === 2) {
+        const duration = parseInt(parts[1], 10);
+        if (duration <= 1) {
+          removed.push(parts[0]);
+        } else {
+          remaining.push(`${parts[0]}:${duration - 1}`);
+        }
+      } else {
+        // No duration — permanent until removed
+        remaining.push(condition);
+      }
+    }
+
+    this.update(id, { conditions_json: remaining });
+    return { removed, remaining };
   }
 }

@@ -77,6 +77,9 @@ export interface PC {
   voice_profile: string | null;
   active: boolean;
   notes: string | null;
+  death_save_successes: number;
+  death_save_failures: number;
+  concentrating_on: string | null;
 }
 
 // ── NPCs ─────────────────────────────────────────────────────────────
