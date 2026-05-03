@@ -1,0 +1,26 @@
+{
+  "name": "@archclaude/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "archclaude": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src/",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@archclaude/shared": "workspace:*",
+    "@archclaude/state": "workspace:*",
+    "gray-matter": "^4.0.3"
+  },
+  "devDependencies": {
+    "eslint": "^9.27.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}

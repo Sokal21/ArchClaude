@@ -1,5 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Turbo
+.turbo/
+
+# SQLite databases (campaign data)
+*.db
+*.db-journal
+*.db-wal
+
+# OS
+.DS_Store
 
 # Beads / Dolt files (added by bd init)
 .dolt/
-*.db
 .beads-credential-key
+
+# IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
