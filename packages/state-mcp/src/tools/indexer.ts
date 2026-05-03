@@ -3,10 +3,9 @@ import type { CampaignDB } from "@archclaude/state";
 import { indexCampaign } from "@archclaude/state";
 
 export function registerIndexerTools(server: McpServer, db: CampaignDB) {
-  server.tool(
+  server.registerTool(
     "reindex_campaign",
-    "Re-index all campaign markdown files into the database. Run after DM edits files or at session start.",
-    {},
+    { description: "Re-index all campaign markdown files into the database. Run after DM edits files or at session start." },
     async () => {
       const result = indexCampaign(db);
       let text = `Indexed ${result.files_processed} files, created ${result.chunks_created} memory chunks.`;

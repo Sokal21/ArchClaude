@@ -9,23 +9,24 @@ export function registerSeedSecretTools(server: McpServer, db: CampaignDB) {
 
   // ── Seeds (foreshadowing) ──
 
-  server.tool(
+  server.registerTool(
     "list_planted_seeds",
-    "List all planted (untriggered) foreshadowing seeds. The orchestrator checks these on scene changes.",
-    {},
+    { description: "List all planted (untriggered) foreshadowing seeds. The orchestrator checks these on scene changes." },
     async () => {
       const seeds = seedDal.listPlanted();
       return { content: [{ type: "text", text: JSON.stringify(seeds, null, 2) }] };
     },
   );
 
-  server.tool(
+  server.registerTool(
     "plant_seed",
-    "Plant a new foreshadowing seed. Will be surfaced when trigger condition is met.",
     {
-      text: z.string().describe("The hint to drop in narration"),
-      trigger_condition: z.string().optional().describe("When to trigger (e.g. 'party_at:Goldspire', 'session>=5')"),
-      visibility: z.enum(["public", "secret"]).optional(),
+      description: "Plant a new foreshadowing seed. Will be surfaced when trigger condition is met.",
+      inputSchema: {
+        text: z.string().describe("The hint to drop in narration"),
+        trigger_condition: z.string().optional().describe("When to trigger (e.g. 'party_at:Goldspire', 'session>=5')"),
+        visibility: z.enum(["public", "secret"]).optional(),
+      },
     },
     async ({ text, trigger_condition, visibility }) => {
       const seed = seedDal.create({ text, trigger_condition, visibility });
@@ -33,10 +34,12 @@ export function registerSeedSecretTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "trigger_seed",
-    "Mark a seed as triggered. Called when its condition is met.",
-    { seed_id: z.number() },
+    {
+      description: "Mark a seed as triggered. Called when its condition is met.",
+      inputSchema: { seed_id: z.number() },
+    },
     async ({ seed_id }) => {
       const seed = seedDal.getById(seed_id);
       if (!seed) return { content: [{ type: "text", text: `Seed #${seed_id} not found.` }] };
@@ -47,22 +50,23 @@ export function registerSeedSecretTools(server: McpServer, db: CampaignDB) {
 
   // ── Secrets (DM-only) ──
 
-  server.tool(
+  server.registerTool(
     "list_hidden_secrets",
-    "List all hidden secrets. NEVER reveal these in narration output.",
-    {},
+    { description: "List all hidden secrets. NEVER reveal these in narration output." },
     async () => {
       const secrets = secretDal.listHidden();
       return { content: [{ type: "text", text: JSON.stringify(secrets, null, 2) }] };
     },
   );
 
-  server.tool(
+  server.registerTool(
     "inject_dm_secret",
-    "Add a DM secret that must never leak into player-facing narration.",
     {
-      topic: z.string().optional(),
-      text: z.string(),
+      description: "Add a DM secret that must never leak into player-facing narration.",
+      inputSchema: {
+        topic: z.string().optional(),
+        text: z.string(),
+      },
     },
     async ({ topic, text }) => {
       const secret = secretDal.create({ topic, text });
@@ -70,12 +74,14 @@ export function registerSeedSecretTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "reveal_secret",
-    "Partially or fully reveal a previously hidden secret.",
     {
-      secret_id: z.number(),
-      status: z.enum(["partial_revealed", "revealed"]),
+      description: "Partially or fully reveal a previously hidden secret.",
+      inputSchema: {
+        secret_id: z.number(),
+        status: z.enum(["partial_revealed", "revealed"]),
+      },
     },
     async ({ secret_id, status }) => {
       const secret = secretDal.getById(secret_id);

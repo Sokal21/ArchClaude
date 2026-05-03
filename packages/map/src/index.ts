@@ -80,14 +80,16 @@ async function main() {
 
   // ── Map lifecycle tools ──
 
-  server.tool(
+  server.registerTool(
     "create_map",
-    "Create a new battle map for a combat encounter.",
     {
-      name: z.string().describe("Map name (e.g. 'Forest Clearing')"),
-      width: z.number().int().positive().describe("Grid width in cells"),
-      height: z.number().int().positive().describe("Grid height in cells"),
-      combat_id: z.string().describe("Combat ID from start_combat"),
+      description: "Create a new battle map for a combat encounter.",
+      inputSchema: {
+        name: z.string().describe("Map name (e.g. 'Forest Clearing')"),
+        width: z.number().int().positive().describe("Grid width in cells"),
+        height: z.number().int().positive().describe("Grid height in cells"),
+        combat_id: z.string().describe("Combat ID from start_combat"),
+      },
     },
     async ({ name, width, height, combat_id }) => {
       store.createMap(name, width, height, combat_id);
@@ -95,10 +97,9 @@ async function main() {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "get_map",
-    "Get the current active map state — all terrain and tokens.",
-    {},
+    { description: "Get the current active map state — all terrain and tokens." },
     async () => {
       const map = store.getMap();
       if (!map) return { content: [{ type: "text", text: "No active map." }] };
@@ -124,30 +125,32 @@ async function main() {
     },
   );
 
-  server.tool("clear_map", "Remove all tokens and terrain.", {}, async () => {
+  server.registerTool("clear_map", { description: "Remove all tokens and terrain." }, async () => {
     store.clearMap();
     return { content: [{ type: "text", text: "Map cleared." }] };
   });
 
-  server.tool("save_map", "Save the current map to disk.", {}, async () => {
+  server.registerTool("save_map", { description: "Save the current map to disk." }, async () => {
     const path = store.saveMap(campaignDir);
     return { content: [{ type: "text", text: path ? `Map saved to ${path}` : "No map or no campaign dir." }] };
   });
 
   // ── Token tools ──
 
-  server.tool(
+  server.registerTool(
     "place_token",
-    "Place a token on the battle map. Returns the token ID for future reference.",
     {
-      label: z.string().describe("Display name"),
-      x: z.number().int(),
-      y: z.number().int(),
-      size: z.enum(["tiny", "small", "medium", "large", "huge", "gargantuan"]).default("medium"),
-      color: z.string().default("#cc0000").describe("Hex color"),
-      actor_kind: z.enum(["pc", "npc_instance"]),
-      actor_id: z.number().int(),
-      visible: z.boolean().optional().default(true),
+      description: "Place a token on the battle map. Returns the token ID for future reference.",
+      inputSchema: {
+        label: z.string().describe("Display name"),
+        x: z.number().int(),
+        y: z.number().int(),
+        size: z.enum(["tiny", "small", "medium", "large", "huge", "gargantuan"]).default("medium"),
+        color: z.string().default("#cc0000").describe("Hex color"),
+        actor_kind: z.enum(["pc", "npc_instance"]),
+        actor_id: z.number().int(),
+        visible: z.boolean().optional().default(true),
+      },
     },
     async ({ label, x, y, size, color, actor_kind, actor_id, visible }) => {
       const token = store.placeToken({
@@ -159,13 +162,15 @@ async function main() {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "move_token",
-    "Move a token to a new grid position.",
     {
-      token_id: z.string(),
-      x: z.number().int(),
-      y: z.number().int(),
+      description: "Move a token to a new grid position.",
+      inputSchema: {
+        token_id: z.string(),
+        x: z.number().int(),
+        y: z.number().int(),
+      },
     },
     async ({ token_id, x, y }) => {
       try {
@@ -177,16 +182,17 @@ async function main() {
     },
   );
 
-  server.tool("remove_token", "Remove a token from the map.", {
-    token_id: z.string(),
+  server.registerTool("remove_token", {
+    description: "Remove a token from the map.",
+    inputSchema: { token_id: z.string() },
   }, async ({ token_id }) => {
     const removed = store.removeToken(token_id);
     return { content: [{ type: "text", text: removed ? "Token removed." : "Token not found." }] };
   });
 
-  server.tool("set_token_visibility", "Show or hide a token (for invisible creatures).", {
-    token_id: z.string(),
-    visible: z.boolean(),
+  server.registerTool("set_token_visibility", {
+    description: "Show or hide a token (for invisible creatures).",
+    inputSchema: { token_id: z.string(), visible: z.boolean() },
   }, async ({ token_id, visible }) => {
     try {
       store.setTokenVisibility(token_id, visible);
@@ -196,9 +202,9 @@ async function main() {
     }
   });
 
-  server.tool("update_token_conditions", "Update visual condition indicators on a token.", {
-    token_id: z.string(),
-    conditions: z.array(z.string()),
+  server.registerTool("update_token_conditions", {
+    description: "Update visual condition indicators on a token.",
+    inputSchema: { token_id: z.string(), conditions: z.array(z.string()) },
   }, async ({ token_id, conditions }) => {
     try {
       store.updateTokenConditions(token_id, conditions);
@@ -210,18 +216,20 @@ async function main() {
 
   // ── Terrain tools ──
 
-  server.tool(
+  server.registerTool(
     "set_terrain",
-    "Set terrain for specific cells. Use for walls, difficult terrain, cover, etc.",
     {
-      cells: z.array(z.object({
-        x: z.number().int(),
-        y: z.number().int(),
-        type: z.enum(["open", "difficult", "wall", "water", "pit", "elevation"]),
-        cover: z.enum(["none", "half", "three_quarter", "full"]).optional(),
-        elevation: z.number().optional(),
-        notes: z.string().optional(),
-      })),
+      description: "Set terrain for specific cells. Use for walls, difficult terrain, cover, etc.",
+      inputSchema: {
+        cells: z.array(z.object({
+          x: z.number().int(),
+          y: z.number().int(),
+          type: z.enum(["open", "difficult", "wall", "water", "pit", "elevation"]),
+          cover: z.enum(["none", "half", "three_quarter", "full"]).optional(),
+          elevation: z.number().optional(),
+          notes: z.string().optional(),
+        })),
+      },
     },
     async ({ cells }) => {
       store.setTerrain(cells as Array<{ x: number; y: number; type: TerrainType; cover?: CoverType }>);
@@ -229,14 +237,16 @@ async function main() {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "set_terrain_rect",
-    "Fill a rectangle with a terrain type (quick wall/water placement).",
     {
-      x: z.number().int(), y: z.number().int(),
-      width: z.number().int().positive(), height: z.number().int().positive(),
-      type: z.enum(["open", "difficult", "wall", "water", "pit", "elevation"]),
-      cover: z.enum(["none", "half", "three_quarter", "full"]).optional(),
+      description: "Fill a rectangle with a terrain type (quick wall/water placement).",
+      inputSchema: {
+        x: z.number().int(), y: z.number().int(),
+        width: z.number().int().positive(), height: z.number().int().positive(),
+        type: z.enum(["open", "difficult", "wall", "water", "pit", "elevation"]),
+        cover: z.enum(["none", "half", "three_quarter", "full"]).optional(),
+      },
     },
     async ({ x, y, width, height, type, cover }) => {
       store.setTerrainRect(x, y, width, height, type as TerrainType, cover as CoverType | undefined);
@@ -246,12 +256,14 @@ async function main() {
 
   // ── Spatial query tools ──
 
-  server.tool(
+  server.registerTool(
     "measure_distance",
-    "Measure distance in feet between two tokens (Chebyshev/5e diagonal).",
     {
-      from_token: z.string().describe("Token ID"),
-      to_token: z.string().describe("Token ID"),
+      description: "Measure distance in feet between two tokens (Chebyshev/5e diagonal).",
+      inputSchema: {
+        from_token: z.string().describe("Token ID"),
+        to_token: z.string().describe("Token ID"),
+      },
     },
     async ({ from_token, to_token }) => {
       try {
@@ -265,10 +277,12 @@ async function main() {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "get_visible",
-    "List tokens visible from a position (checks line-of-sight through walls).",
-    { from_token: z.string() },
+    {
+      description: "List tokens visible from a position (checks line-of-sight through walls).",
+      inputSchema: { from_token: z.string() },
+    },
     async ({ from_token }) => {
       try {
         const visible = store.getVisible(from_token);
@@ -286,12 +300,14 @@ async function main() {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "query_in_range",
-    "Find all tokens within a range (feet) from a token.",
     {
-      from_token: z.string(),
-      range_ft: z.number().positive(),
+      description: "Find all tokens within a range (feet) from a token.",
+      inputSchema: {
+        from_token: z.string(),
+        range_ft: z.number().positive(),
+      },
     },
     async ({ from_token, range_ft }) => {
       try {
@@ -313,15 +329,17 @@ async function main() {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "apply_aoe",
-    "Apply an area of effect and find affected tokens. Shape: circle, cone, line, cube.",
     {
-      shape: z.enum(["circle", "cone", "line", "cube"]),
-      origin_x: z.number().int(),
-      origin_y: z.number().int(),
-      size_ft: z.number().positive().describe("Radius/length in feet"),
-      direction: z.number().optional().describe("Direction in degrees (0=north) — for cone and line"),
+      description: "Apply an area of effect and find affected tokens. Shape: circle, cone, line, cube.",
+      inputSchema: {
+        shape: z.enum(["circle", "cone", "line", "cube"]),
+        origin_x: z.number().int(),
+        origin_y: z.number().int(),
+        size_ft: z.number().positive().describe("Radius/length in feet"),
+        direction: z.number().optional().describe("Direction in degrees (0=north) — for cone and line"),
+      },
     },
     async ({ shape, origin_x, origin_y, size_ft, direction }) => {
       try {
@@ -341,12 +359,14 @@ async function main() {
 
   // ── HUD forwarding tool ──
 
-  server.tool(
+  server.registerTool(
     "broadcast_narration",
-    "Send narration text to the TV display via WebSocket.",
     {
-      text: z.string(),
-      intensity: z.enum(["terse", "normal", "tense", "climax"]).optional(),
+      description: "Send narration text to the TV display via WebSocket.",
+      inputSchema: {
+        text: z.string(),
+        intensity: z.enum(["terse", "normal", "tense", "climax"]).optional(),
+      },
     },
     async ({ text, intensity }) => {
       store.forwardEvent("narration_text", { text, intensity: intensity ?? "normal" });
@@ -354,17 +374,19 @@ async function main() {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "broadcast_initiative",
-    "Update the initiative display on the TV.",
     {
-      order: z.array(z.object({
-        name: z.string(),
-        actor_kind: z.string(),
-        actor_id: z.number(),
-        init: z.number(),
-      })),
-      current_index: z.number().int(),
+      description: "Update the initiative display on the TV.",
+      inputSchema: {
+        order: z.array(z.object({
+          name: z.string(),
+          actor_kind: z.string(),
+          actor_id: z.number(),
+          init: z.number(),
+        })),
+        current_index: z.number().int(),
+      },
     },
     async ({ order, current_index }) => {
       store.forwardEvent("initiative_update", { order, current_index });
@@ -372,16 +394,18 @@ async function main() {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "broadcast_party_status",
-    "Update party HP/condition display on the TV.",
     {
-      pcs: z.array(z.object({
-        name: z.string(),
-        hp: z.number(),
-        max_hp: z.number(),
-        conditions: z.array(z.string()),
-      })),
+      description: "Update party HP/condition display on the TV.",
+      inputSchema: {
+        pcs: z.array(z.object({
+          name: z.string(),
+          hp: z.number(),
+          max_hp: z.number(),
+          conditions: z.array(z.string()),
+        })),
+      },
     },
     async ({ pcs }) => {
       store.forwardEvent("party_status_update", { pcs });

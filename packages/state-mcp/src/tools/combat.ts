@@ -11,14 +11,16 @@ export function registerCombatTools(server: McpServer, db: CampaignDB) {
   const pcDal = new PCDAL(db.db);
   const eventDal = new EventDAL(db.db);
 
-  server.tool(
+  server.registerTool(
     "start_combat",
-    "Start a new combat encounter. Creates a combat record and returns its ID. Call set_initiative next.",
     {
-      intensity: z.enum(["terse", "normal", "tense", "climax"]).optional()
-        .describe("Narration verbosity: terse (quick), normal, tense (dramatic), climax (boss fight)"),
-      difficulty: z.enum(["easy", "medium", "hard", "deadly"]).optional(),
-      narrative_context: z.string().optional().describe("What led to this fight"),
+      description: "Start a new combat encounter. Creates a combat record and returns its ID. Call set_initiative next.",
+      inputSchema: {
+        intensity: z.enum(["terse", "normal", "tense", "climax"]).optional()
+          .describe("Narration verbosity: terse (quick), normal, tense (dramatic), climax (boss fight)"),
+        difficulty: z.enum(["easy", "medium", "hard", "deadly"]).optional(),
+        narrative_context: z.string().optional().describe("What led to this fight"),
+      },
     },
     async ({ intensity, difficulty, narrative_context }) => {
       const sessions = sessionDal.list();
@@ -50,15 +52,17 @@ export function registerCombatTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "add_combatant",
-    "Add a monster/NPC to the active combat. Returns the instance ID for initiative tracking.",
     {
-      display_name: z.string().describe("Display name (e.g. 'Goblin 1', 'Mordax the Cruel')"),
-      max_hp: z.number().positive(),
-      ac: z.number().positive(),
-      template_key: z.string().optional().describe("SRD key like 'srd:goblin' or 'homebrew:bbeg_v2'"),
-      npc_id: z.number().optional().describe("Link to a recurring NPC if applicable"),
+      description: "Add a monster/NPC to the active combat. Returns the instance ID for initiative tracking.",
+      inputSchema: {
+        display_name: z.string().describe("Display name (e.g. 'Goblin 1', 'Mordax the Cruel')"),
+        max_hp: z.number().positive(),
+        ac: z.number().positive(),
+        template_key: z.string().optional().describe("SRD key like 'srd:goblin' or 'homebrew:bbeg_v2'"),
+        npc_id: z.number().optional().describe("Link to a recurring NPC if applicable"),
+      },
     },
     async ({ display_name, max_hp, ac, template_key, npc_id }) => {
       const combat = combatDal.getActive();
@@ -85,15 +89,17 @@ export function registerCombatTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "set_initiative",
-    "Set the initiative order for the current combat. Provide an ordered list of combatants.",
     {
-      order: z.array(z.object({
-        actor_kind: z.enum(["pc", "npc_instance"]),
-        actor_id: z.number(),
-        init: z.number().describe("Initiative roll result"),
-      })).describe("Initiative order, highest first"),
+      description: "Set the initiative order for the current combat. Provide an ordered list of combatants.",
+      inputSchema: {
+        order: z.array(z.object({
+          actor_kind: z.enum(["pc", "npc_instance"]),
+          actor_id: z.number(),
+          init: z.number().describe("Initiative roll result"),
+        })).describe("Initiative order, highest first"),
+      },
     },
     async ({ order }) => {
       const combat = combatDal.getActive();
@@ -126,10 +132,9 @@ export function registerCombatTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "get_combat_state",
-    "Get the full state of the active combat: initiative order, round, current turn, all combatants with HP/conditions.",
-    {},
+    { description: "Get the full state of the active combat: initiative order, round, current turn, all combatants with HP/conditions." },
     async () => {
       const combat = combatDal.getActive();
       if (!combat) {
@@ -175,10 +180,9 @@ export function registerCombatTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "advance_turn",
-    "Advance to the next turn in initiative order. Wraps to round+1 when the order cycles.",
-    {},
+    { description: "Advance to the next turn in initiative order. Wraps to round+1 when the order cycles." },
     async () => {
       const combat = combatDal.getActive();
       if (!combat || !combat.initiative_json) {
@@ -224,13 +228,15 @@ export function registerCombatTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "damage_combatant",
-    "Apply damage to a monster/NPC instance in combat. Marks as defeated at 0 HP.",
     {
-      instance_id: z.number().describe("NPC instance ID"),
-      amount: z.number().positive(),
-      damage_type: z.string().optional(),
+      description: "Apply damage to a monster/NPC instance in combat. Marks as defeated at 0 HP.",
+      inputSchema: {
+        instance_id: z.number().describe("NPC instance ID"),
+        amount: z.number().positive(),
+        damage_type: z.string().optional(),
+      },
     },
     async ({ instance_id, amount, damage_type }) => {
       const inst = combatDal.getInstance(instance_id);
@@ -250,12 +256,14 @@ export function registerCombatTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "apply_combatant_condition",
-    "Apply a condition to a monster/NPC instance.",
     {
-      instance_id: z.number(),
-      condition: z.string().describe("Condition (e.g. 'stunned:1', 'prone')"),
+      description: "Apply a condition to a monster/NPC instance.",
+      inputSchema: {
+        instance_id: z.number(),
+        condition: z.string().describe("Condition (e.g. 'stunned:1', 'prone')"),
+      },
     },
     async ({ instance_id, condition }) => {
       const inst = combatDal.getInstance(instance_id);
@@ -276,11 +284,13 @@ export function registerCombatTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "end_combat",
-    "End the active combat with an outcome.",
     {
-      outcome: z.enum(["victory", "defeat", "fled", "negotiated", "aborted"]),
+      description: "End the active combat with an outcome.",
+      inputSchema: {
+        outcome: z.enum(["victory", "defeat", "fled", "negotiated", "aborted"]),
+      },
     },
     async ({ outcome }) => {
       const combat = combatDal.getActive();

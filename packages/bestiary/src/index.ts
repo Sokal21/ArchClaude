@@ -64,17 +64,19 @@ async function main() {
     version: "0.1.0",
   });
 
-  server.tool(
+  server.registerTool(
     "find_monsters",
-    "Search SRD monsters by CR range, creature type, size, or environment. Returns compact summaries. Use get_stat_block for full details.",
     {
-      cr_min: z.number().optional().describe("Minimum challenge rating"),
-      cr_max: z.number().optional().describe("Maximum challenge rating"),
-      type: z.string().optional().describe("Creature type (beast, undead, fiend, dragon, etc)"),
-      size: z.string().optional().describe("Size (Tiny, Small, Medium, Large, Huge, Gargantuan)"),
-      environment: z.string().optional().describe("Environment (forest, underdark, arctic, etc)"),
-      name: z.string().optional().describe("Name search (partial match)"),
-      limit: z.number().optional().describe("Max results (default 20)"),
+      description: "Search SRD monsters by CR range, creature type, size, or environment. Returns compact summaries. Use get_stat_block for full details.",
+      inputSchema: {
+        cr_min: z.number().optional().describe("Minimum challenge rating"),
+        cr_max: z.number().optional().describe("Maximum challenge rating"),
+        type: z.string().optional().describe("Creature type (beast, undead, fiend, dragon, etc)"),
+        size: z.string().optional().describe("Size (Tiny, Small, Medium, Large, Huge, Gargantuan)"),
+        environment: z.string().optional().describe("Environment (forest, underdark, arctic, etc)"),
+        name: z.string().optional().describe("Name search (partial match)"),
+        limit: z.number().optional().describe("Max results (default 20)"),
+      },
     },
     async (filters) => {
       const limit = filters.limit ?? 20;
@@ -99,11 +101,13 @@ async function main() {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "get_stat_block",
-    "Get the full stat block for a monster by slug (e.g. 'goblin', 'ancient-red-dragon'). Includes actions, abilities, saves.",
     {
-      slug: z.string().describe("Monster slug from find_monsters results"),
+      description: "Get the full stat block for a monster by slug (e.g. 'goblin', 'ancient-red-dragon'). Includes actions, abilities, saves.",
+      inputSchema: {
+        slug: z.string().describe("Monster slug from find_monsters results"),
+      },
     },
     async ({ slug }) => {
       const monster = monsters.find((m) => m.slug === slug);
@@ -114,14 +118,16 @@ async function main() {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "find_spells",
-    "Search SRD spells by name, level, or school.",
     {
-      name: z.string().optional().describe("Spell name (partial match)"),
-      level: z.string().optional().describe("Spell level ('Cantrip', '1st-level', '2nd-level', etc)"),
-      school: z.string().optional().describe("School of magic (evocation, abjuration, etc)"),
-      limit: z.number().optional(),
+      description: "Search SRD spells by name, level, or school.",
+      inputSchema: {
+        name: z.string().optional().describe("Spell name (partial match)"),
+        level: z.string().optional().describe("Spell level ('Cantrip', '1st-level', '2nd-level', etc)"),
+        school: z.string().optional().describe("School of magic (evocation, abjuration, etc)"),
+        limit: z.number().optional(),
+      },
     },
     async (filters) => {
       const limit = filters.limit ?? 20;
@@ -145,11 +151,13 @@ async function main() {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "get_spell",
-    "Get the full description of a spell by slug.",
     {
-      slug: z.string().describe("Spell slug from find_spells results"),
+      description: "Get the full description of a spell by slug.",
+      inputSchema: {
+        slug: z.string().describe("Spell slug from find_spells results"),
+      },
     },
     async ({ slug }) => {
       const spell = spells.find((s) => s.slug === slug);
@@ -160,11 +168,13 @@ async function main() {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "get_condition",
-    "Get the rules text for a condition (e.g. 'blinded', 'stunned', 'poisoned').",
     {
-      name: z.string().describe("Condition name"),
+      description: "Get the rules text for a condition (e.g. 'blinded', 'stunned', 'poisoned').",
+      inputSchema: {
+        name: z.string().describe("Condition name"),
+      },
     },
     async ({ name }) => {
       const condition = conditions.find(
@@ -177,10 +187,9 @@ async function main() {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "list_homebrew",
-    "List homebrew monsters and items from the campaign's homebrew/ folder.",
-    {},
+    { description: "List homebrew monsters and items from the campaign's homebrew/ folder." },
     async () => {
       if (!campaignDir) {
         return { content: [{ type: "text", text: "No CAMPAIGN_DIR set. Homebrew lookup unavailable." }] };

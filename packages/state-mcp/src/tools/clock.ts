@@ -8,10 +8,9 @@ export function registerClockTools(server: McpServer, db: CampaignDB) {
   const dal = new ClockDAL(db.db);
   const eventDal = new EventDAL(db.db);
 
-  server.tool(
+  server.registerTool(
     "get_clock",
-    "Get the current in-world time, date, weather, location, and party state.",
-    {},
+    { description: "Get the current in-world time, date, weather, location, and party state." },
     async () => {
       const clock = dal.get();
       if (!clock) {
@@ -21,14 +20,16 @@ export function registerClockTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "advance_clock",
-    "Advance in-world time. Updates time of day, optionally date and weather.",
     {
-      time_of_day: z.enum(["dawn", "morning", "midday", "dusk", "night", "midnight"]).optional(),
-      in_world_date: z.string().optional().describe("New in-world date string"),
-      weather: z.string().optional(),
-      party_state: z.enum(["exploring", "traveling", "resting", "in_combat", "social", "downtime"]).optional(),
+      description: "Advance in-world time. Updates time of day, optionally date and weather.",
+      inputSchema: {
+        time_of_day: z.enum(["dawn", "morning", "midday", "dusk", "night", "midnight"]).optional(),
+        in_world_date: z.string().optional().describe("New in-world date string"),
+        weather: z.string().optional(),
+        party_state: z.enum(["exploring", "traveling", "resting", "in_combat", "social", "downtime"]).optional(),
+      },
     },
     async (fields) => {
       const updated = dal.update(fields);
@@ -41,11 +42,13 @@ export function registerClockTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "set_party_location",
-    "Update where the party currently is.",
     {
-      location_name: z.string(),
+      description: "Update where the party currently is.",
+      inputSchema: {
+        location_name: z.string(),
+      },
     },
     async ({ location_name }) => {
       const { LocationDAL } = await import("@archclaude/state");

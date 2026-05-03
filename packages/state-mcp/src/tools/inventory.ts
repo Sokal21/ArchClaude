@@ -7,11 +7,13 @@ export function registerInventoryTools(server: McpServer, db: CampaignDB) {
   const dal = new InventoryDAL(db.db);
   const pcDal = new PCDAL(db.db);
 
-  server.tool(
+  server.registerTool(
     "list_inventory",
-    "List inventory for a PC or the party.",
     {
-      owner: z.string().describe("PC name or 'party'"),
+      description: "List inventory for a PC or the party.",
+      inputSchema: {
+        owner: z.string().describe("PC name or 'party'"),
+      },
     },
     async ({ owner }) => {
       if (owner === "party") {
@@ -25,15 +27,17 @@ export function registerInventoryTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "add_item",
-    "Add an item to a PC or the party inventory.",
     {
-      owner: z.string().describe("PC name or 'party'"),
-      name: z.string(),
-      kind: z.enum(["magic_item", "key_item", "consumable", "currency"]).optional(),
-      description: z.string().optional(),
-      qty: z.number().optional(),
+      description: "Add an item to a PC or the party inventory.",
+      inputSchema: {
+        owner: z.string().describe("PC name or 'party'"),
+        name: z.string(),
+        kind: z.enum(["magic_item", "key_item", "consumable", "currency"]).optional(),
+        description: z.string().optional(),
+        qty: z.number().optional(),
+      },
     },
     async ({ owner, name, kind, description, qty }) => {
       let ownerKind: "pc" | "party" = "party";
@@ -49,12 +53,14 @@ export function registerInventoryTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "remove_item",
-    "Remove an item from inventory by name.",
     {
-      owner: z.string().describe("PC name or 'party'"),
-      name: z.string(),
+      description: "Remove an item from inventory by name.",
+      inputSchema: {
+        owner: z.string().describe("PC name or 'party'"),
+        name: z.string(),
+      },
     },
     async ({ owner, name }) => {
       const allItems = dal.listAll();

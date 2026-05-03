@@ -6,12 +6,14 @@ import { EventDAL } from "@archclaude/state";
 export function registerEventTools(server: McpServer, db: CampaignDB) {
   const dal = new EventDAL(db.db);
 
-  server.tool(
+  server.registerTool(
     "get_recent_events",
-    "Get the most recent events from the event log. Useful for understanding what just happened.",
     {
-      limit: z.number().optional().describe("Max events to return (default 20)"),
-      type: z.string().optional().describe("Filter by event type (e.g. 'damage_dealt')"),
+      description: "Get the most recent events from the event log. Useful for understanding what just happened.",
+      inputSchema: {
+        limit: z.number().optional().describe("Max events to return (default 20)"),
+        type: z.string().optional().describe("Filter by event type (e.g. 'damage_dealt')"),
+      },
     },
     async ({ limit, type }) => {
       const events = type
@@ -30,11 +32,13 @@ export function registerEventTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "get_session_events",
-    "Get all events for a specific session. Used for recap generation and session review.",
     {
-      session_number: z.number(),
+      description: "Get all events for a specific session. Used for recap generation and session review.",
+      inputSchema: {
+        session_number: z.number(),
+      },
     },
     async ({ session_number }) => {
       // Find session by number
@@ -50,10 +54,9 @@ export function registerEventTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "undo_last_event",
-    "Revert the most recent non-reverted event. Used for 'wait, redo that' moments at the table.",
-    {},
+    { description: "Revert the most recent non-reverted event. Used for 'wait, redo that' moments at the table." },
     async () => {
       const recent = dal.recent(1);
       if (recent.length === 0) {

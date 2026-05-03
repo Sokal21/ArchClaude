@@ -6,10 +6,12 @@ import { NPCDAL } from "@archclaude/state";
 export function registerNPCTools(server: McpServer, db: CampaignDB) {
   const dal = new NPCDAL(db.db);
 
-  server.tool(
+  server.registerTool(
     "get_npc",
-    "Get an NPC by name. Returns role, status, location, faction, and summary.",
-    { name: z.string().describe("NPC name") },
+    {
+      description: "Get an NPC by name. Returns role, status, location, faction, and summary.",
+      inputSchema: { name: z.string().describe("NPC name") },
+    },
     async ({ name }) => {
       const npc = dal.getByName(name);
       if (!npc) {
@@ -19,12 +21,14 @@ export function registerNPCTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "list_npcs",
-    "List NPCs, optionally filtered by status or faction.",
     {
-      status: z.enum(["alive", "dead", "missing", "unknown"]).optional(),
-      faction: z.string().optional(),
+      description: "List NPCs, optionally filtered by status or faction.",
+      inputSchema: {
+        status: z.enum(["alive", "dead", "missing", "unknown"]).optional(),
+        faction: z.string().optional(),
+      },
     },
     async ({ status, faction }) => {
       const npcs = dal.list({ status, faction });
@@ -39,16 +43,18 @@ export function registerNPCTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "create_npc",
-    "Register a new NPC in the campaign.",
     {
-      name: z.string(),
-      role: z.string().optional(),
-      current_location: z.string().optional(),
-      faction: z.string().optional(),
-      notes_summary: z.string().optional().describe("One-paragraph summary for token-efficient recall"),
-      introduced_session: z.number().optional(),
+      description: "Register a new NPC in the campaign.",
+      inputSchema: {
+        name: z.string(),
+        role: z.string().optional(),
+        current_location: z.string().optional(),
+        faction: z.string().optional(),
+        notes_summary: z.string().optional().describe("One-paragraph summary for token-efficient recall"),
+        introduced_session: z.number().optional(),
+      },
     },
     async (params) => {
       const npc = dal.create(params);
@@ -56,15 +62,17 @@ export function registerNPCTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "update_npc",
-    "Update an NPC's status, location, faction, or other fields.",
     {
-      name: z.string().describe("NPC name to update"),
-      status: z.enum(["alive", "dead", "missing", "unknown"]).optional(),
-      current_location: z.string().optional(),
-      faction: z.string().optional(),
-      notes_summary: z.string().optional(),
+      description: "Update an NPC's status, location, faction, or other fields.",
+      inputSchema: {
+        name: z.string().describe("NPC name to update"),
+        status: z.enum(["alive", "dead", "missing", "unknown"]).optional(),
+        current_location: z.string().optional(),
+        faction: z.string().optional(),
+        notes_summary: z.string().optional(),
+      },
     },
     async ({ name, ...fields }) => {
       const npc = dal.getByName(name);

@@ -6,10 +6,12 @@ import { PCDAL } from "@archclaude/state";
 export function registerPCTools(server: McpServer, db: CampaignDB) {
   const dal = new PCDAL(db.db);
 
-  server.tool(
+  server.registerTool(
     "get_pc",
-    "Get a player character by name. Returns full combat stats, conditions, spell slots.",
-    { name: z.string().describe("PC name") },
+    {
+      description: "Get a player character by name. Returns full combat stats, conditions, spell slots.",
+      inputSchema: { name: z.string().describe("PC name") },
+    },
     async ({ name }) => {
       const pc = dal.getByName(name);
       if (!pc) {
@@ -19,10 +21,9 @@ export function registerPCTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "list_pcs",
-    "List all active player characters with their current HP, AC, and conditions.",
-    {},
+    { description: "List all active player characters with their current HP, AC, and conditions." },
     async () => {
       const pcs = dal.listActive();
       // Return a compact summary for token efficiency
@@ -40,13 +41,15 @@ export function registerPCTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "apply_damage",
-    "Apply damage to a PC. Reduces current_hp (minimum 0). Returns updated PC state.",
     {
-      name: z.string().describe("PC name"),
-      amount: z.number().positive().describe("Damage amount"),
-      damage_type: z.string().optional().describe("Damage type (slashing, fire, etc)"),
+      description: "Apply damage to a PC. Reduces current_hp (minimum 0). Returns updated PC state.",
+      inputSchema: {
+        name: z.string().describe("PC name"),
+        amount: z.number().positive().describe("Damage amount"),
+        damage_type: z.string().optional().describe("Damage type (slashing, fire, etc)"),
+      },
     },
     async ({ name, amount, damage_type }) => {
       const pc = dal.getByName(name);
@@ -73,12 +76,14 @@ export function registerPCTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "apply_healing",
-    "Heal a PC. Increases current_hp (capped at max_hp). Returns updated PC state.",
     {
-      name: z.string().describe("PC name"),
-      amount: z.number().positive().describe("Healing amount"),
+      description: "Heal a PC. Increases current_hp (capped at max_hp). Returns updated PC state.",
+      inputSchema: {
+        name: z.string().describe("PC name"),
+        amount: z.number().positive().describe("Healing amount"),
+      },
     },
     async ({ name, amount }) => {
       const pc = dal.getByName(name);
@@ -96,12 +101,14 @@ export function registerPCTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "apply_condition",
-    "Apply a condition to a PC (e.g. 'poisoned:2' for 2 turns, or 'prone').",
     {
-      name: z.string().describe("PC name"),
-      condition: z.string().describe("Condition string (e.g. 'poisoned:2', 'prone')"),
+      description: "Apply a condition to a PC (e.g. 'poisoned:2' for 2 turns, or 'prone').",
+      inputSchema: {
+        name: z.string().describe("PC name"),
+        condition: z.string().describe("Condition string (e.g. 'poisoned:2', 'prone')"),
+      },
     },
     async ({ name, condition }) => {
       const pc = dal.getByName(name);
@@ -123,12 +130,14 @@ export function registerPCTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "remove_condition",
-    "Remove a condition from a PC.",
     {
-      name: z.string().describe("PC name"),
-      condition: z.string().describe("Condition name to remove (e.g. 'poisoned', 'prone')"),
+      description: "Remove a condition from a PC.",
+      inputSchema: {
+        name: z.string().describe("PC name"),
+        condition: z.string().describe("Condition name to remove (e.g. 'poisoned', 'prone')"),
+      },
     },
     async ({ name, condition }) => {
       const pc = dal.getByName(name);
@@ -148,12 +157,14 @@ export function registerPCTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "update_spell_slots",
-    "Update a PC's spell slot usage. Provide the current slots remaining.",
     {
-      name: z.string().describe("PC name"),
-      current: z.record(z.string(), z.number()).describe("Current spell slots remaining, e.g. {'1': 2, '2': 1}"),
+      description: "Update a PC's spell slot usage. Provide the current slots remaining.",
+      inputSchema: {
+        name: z.string().describe("PC name"),
+        current: z.record(z.string(), z.number()).describe("Current spell slots remaining, e.g. {'1': 2, '2': 1}"),
+      },
     },
     async ({ name, current }) => {
       const pc = dal.getByName(name);
@@ -174,12 +185,14 @@ export function registerPCTools(server: McpServer, db: CampaignDB) {
 
   // ── Death saves ──
 
-  server.tool(
+  server.registerTool(
     "record_death_save",
-    "Record a death saving throw for a PC at 0 HP. 3 successes = stabilize, 3 failures = death.",
     {
-      name: z.string().describe("PC name"),
-      success: z.boolean().describe("true = success, false = failure"),
+      description: "Record a death saving throw for a PC at 0 HP. 3 successes = stabilize, 3 failures = death.",
+      inputSchema: {
+        name: z.string().describe("PC name"),
+        success: z.boolean().describe("true = success, false = failure"),
+      },
     },
     async ({ name, success }) => {
       const pc = dal.getByName(name);
@@ -194,10 +207,12 @@ export function registerPCTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "reset_death_saves",
-    "Reset a PC's death save counters (after stabilizing, healing, or long rest).",
-    { name: z.string() },
+    {
+      description: "Reset a PC's death save counters (after stabilizing, healing, or long rest).",
+      inputSchema: { name: z.string() },
+    },
     async ({ name }) => {
       const pc = dal.getByName(name);
       if (!pc) return { content: [{ type: "text", text: `PC "${name}" not found.` }] };
@@ -208,10 +223,12 @@ export function registerPCTools(server: McpServer, db: CampaignDB) {
 
   // ── Rest ──
 
-  server.tool(
+  server.registerTool(
     "long_rest",
-    "Apply long rest to a PC: restore HP to max, reset spell slots, clear conditions, reset death saves.",
-    { name: z.string() },
+    {
+      description: "Apply long rest to a PC: restore HP to max, reset spell slots, clear conditions, reset death saves.",
+      inputSchema: { name: z.string() },
+    },
     async ({ name }) => {
       const pc = dal.getByName(name);
       if (!pc) return { content: [{ type: "text", text: `PC "${name}" not found.` }] };
@@ -225,12 +242,14 @@ export function registerPCTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "short_rest",
-    "Apply short rest to a PC: heal using hit dice.",
     {
-      name: z.string(),
-      hit_dice_healing: z.number().describe("Total HP restored from hit dice rolls"),
+      description: "Apply short rest to a PC: heal using hit dice.",
+      inputSchema: {
+        name: z.string(),
+        hit_dice_healing: z.number().describe("Total HP restored from hit dice rolls"),
+      },
     },
     async ({ name, hit_dice_healing }) => {
       const pc = dal.getByName(name);
@@ -247,10 +266,12 @@ export function registerPCTools(server: McpServer, db: CampaignDB) {
 
   // ── Condition tick ──
 
-  server.tool(
+  server.registerTool(
     "tick_conditions",
-    "Decrement duration-based conditions by 1 round for a PC. Removes expired conditions. Call at the start of each round.",
-    { name: z.string() },
+    {
+      description: "Decrement duration-based conditions by 1 round for a PC. Removes expired conditions. Call at the start of each round.",
+      inputSchema: { name: z.string() },
+    },
     async ({ name }) => {
       const pc = dal.getByName(name);
       if (!pc) return { content: [{ type: "text", text: `PC "${name}" not found.` }] };
@@ -265,12 +286,14 @@ export function registerPCTools(server: McpServer, db: CampaignDB) {
 
   // ── Concentration ──
 
-  server.tool(
+  server.registerTool(
     "set_concentration",
-    "Set or clear what a PC is concentrating on.",
     {
-      name: z.string(),
-      spell: z.string().nullable().describe("Spell name, or null to clear concentration"),
+      description: "Set or clear what a PC is concentrating on.",
+      inputSchema: {
+        name: z.string(),
+        spell: z.string().nullable().describe("Spell name, or null to clear concentration"),
+      },
     },
     async ({ name, spell }) => {
       const pc = dal.getByName(name);

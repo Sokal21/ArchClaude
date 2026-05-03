@@ -10,10 +10,12 @@ export function registerWorldTools(server: McpServer, db: CampaignDB) {
 
   // ── Locations ──
 
-  server.tool(
+  server.registerTool(
     "get_location",
-    "Get a location by name.",
-    { name: z.string() },
+    {
+      description: "Get a location by name.",
+      inputSchema: { name: z.string() },
+    },
     async ({ name }) => {
       const loc = locationDal.getByName(name);
       if (!loc) return { content: [{ type: "text", text: `Location "${name}" not found.` }] };
@@ -21,12 +23,14 @@ export function registerWorldTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "list_locations",
-    "List known locations, optionally filtered by type or status.",
     {
-      type: z.enum(["city", "dungeon", "wilderness", "landmark", "building", "room"]).optional(),
-      status: z.enum(["unknown", "known", "visited", "cleared", "destroyed"]).optional(),
+      description: "List known locations, optionally filtered by type or status.",
+      inputSchema: {
+        type: z.enum(["city", "dungeon", "wilderness", "landmark", "building", "room"]).optional(),
+        status: z.enum(["unknown", "known", "visited", "cleared", "destroyed"]).optional(),
+      },
     },
     async ({ type, status }) => {
       const locs = locationDal.list({ type, status });
@@ -34,14 +38,16 @@ export function registerWorldTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "create_location",
-    "Register a new location in the campaign.",
     {
-      name: z.string(),
-      type: z.enum(["city", "dungeon", "wilderness", "landmark", "building", "room"]).optional(),
-      parent_name: z.string().optional().describe("Parent location name for nesting"),
-      status: z.enum(["unknown", "known", "visited", "cleared", "destroyed"]).optional(),
+      description: "Register a new location in the campaign.",
+      inputSchema: {
+        name: z.string(),
+        type: z.enum(["city", "dungeon", "wilderness", "landmark", "building", "room"]).optional(),
+        parent_name: z.string().optional().describe("Parent location name for nesting"),
+        status: z.enum(["unknown", "known", "visited", "cleared", "destroyed"]).optional(),
+      },
     },
     async ({ name, type, parent_name, status }) => {
       let parent_id: number | undefined;
@@ -55,12 +61,14 @@ export function registerWorldTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "update_location_status",
-    "Update a location's status (e.g. mark as visited, cleared).",
     {
-      name: z.string(),
-      status: z.enum(["unknown", "known", "visited", "cleared", "destroyed"]),
+      description: "Update a location's status (e.g. mark as visited, cleared).",
+      inputSchema: {
+        name: z.string(),
+        status: z.enum(["unknown", "known", "visited", "cleared", "destroyed"]),
+      },
     },
     async ({ name, status }) => {
       const loc = locationDal.getByName(name);
@@ -72,22 +80,23 @@ export function registerWorldTools(server: McpServer, db: CampaignDB) {
 
   // ── Factions ──
 
-  server.tool(
+  server.registerTool(
     "list_factions",
-    "List all factions with their reputation scores.",
-    {},
+    { description: "List all factions with their reputation scores." },
     async () => {
       const factions = factionDal.list();
       return { content: [{ type: "text", text: JSON.stringify(factions, null, 2) }] };
     },
   );
 
-  server.tool(
+  server.registerTool(
     "update_faction_reputation",
-    "Adjust a faction's reputation score (-10 hostile to +10 allied).",
     {
-      name: z.string(),
-      delta: z.number().describe("Change in reputation (positive = more friendly)"),
+      description: "Adjust a faction's reputation score (-10 hostile to +10 allied).",
+      inputSchema: {
+        name: z.string(),
+        delta: z.number().describe("Change in reputation (positive = more friendly)"),
+      },
     },
     async ({ name, delta }) => {
       const faction = factionDal.getByName(name);
@@ -100,23 +109,24 @@ export function registerWorldTools(server: McpServer, db: CampaignDB) {
 
   // ── Quests ──
 
-  server.tool(
+  server.registerTool(
     "list_active_quests",
-    "List all active quests.",
-    {},
+    { description: "List all active quests." },
     async () => {
       const quests = questDal.listActive();
       return { content: [{ type: "text", text: JSON.stringify(quests, null, 2) }] };
     },
   );
 
-  server.tool(
+  server.registerTool(
     "create_quest",
-    "Create a new quest.",
     {
-      title: z.string(),
-      summary: z.string().optional(),
-      giver_npc: z.string().optional().describe("NPC name who gives this quest"),
+      description: "Create a new quest.",
+      inputSchema: {
+        title: z.string(),
+        summary: z.string().optional(),
+        giver_npc: z.string().optional().describe("NPC name who gives this quest"),
+      },
     },
     async ({ title, summary }) => {
       const quest = questDal.create({ title, summary });
@@ -124,12 +134,14 @@ export function registerWorldTools(server: McpServer, db: CampaignDB) {
     },
   );
 
-  server.tool(
+  server.registerTool(
     "update_quest_state",
-    "Update a quest's state.",
     {
-      title: z.string().describe("Quest title to find"),
-      new_state: z.enum(["active", "completed", "failed", "dormant"]),
+      description: "Update a quest's state.",
+      inputSchema: {
+        title: z.string().describe("Quest title to find"),
+        new_state: z.enum(["active", "completed", "failed", "dormant"]),
+      },
     },
     async ({ title, new_state }) => {
       const quests = questDal.list();
