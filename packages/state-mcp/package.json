@@ -1,0 +1,29 @@
+{
+  "name": "@archclaude/state-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "archclaude-state-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "lint": "eslint src/",
+    "clean": "rm -rf dist",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@archclaude/shared": "workspace:*",
+    "@archclaude/state": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^4.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}

@@ -1,0 +1,30 @@
+[
+  {
+    "id": 1,
+    "text": "Elara pauses when you mention the cairns, and her hand instinctively moves to cover the stumps of her missing fingers.",
+    "trigger": "party mentions cairns to Elara",
+    "visibility": "public",
+    "status": "planted"
+  },
+  {
+    "id": 2,
+    "text": "Corvus seems unusually interested when Tharivol mentions the Silver Hand. He asks several pointed questions about the Order's archives.",
+    "trigger": "Corvus meets Tharivol",
+    "visibility": "public",
+    "status": "planted"
+  },
+  {
+    "id": 3,
+    "text": "Miravel's palm scar glows faintly as the party approaches the largest cairn.",
+    "trigger": "party reaches the Vault cairn",
+    "visibility": "public",
+    "status": "planted"
+  },
+  {
+    "id": 4,
+    "text": "Brother Aldous, if asked about the cairns, will mention that 'old Kael Dawnshield' was the last knight to venture into the Wood. His name is carved in the chapel's memorial wall.",
+    "trigger": "party visits the Chapel of the Morning",
+    "visibility": "secret",
+    "status": "planted"
+  }
+]

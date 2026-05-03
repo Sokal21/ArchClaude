@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Vault Tablet",
+    "type": "key_item",
+    "description": "A stone tablet inscribed with a map showing the locations of other sealed vaults. The spiral sigils on its surface pulse faintly with cold blue light. It also functions as a key — pressing it against a vault's seal will open it.",
+    "notes": "Corvus will pay 50gp for this. The Grey Exchange will pay much more. Keeping it means the party controls who opens the remaining vaults."
+  },
+  {
+    "name": "Sir Aldric's Shield",
+    "type": "magic_item",
+    "description": "A battered wooden shield bearing the faded emblem of the Silver Hand. In the presence of undead, the emblem glows with warm golden light, granting +1 to AC against undead attacks.",
+    "notes": "Tharivol's starting equipment. The glow is a minor enchantment placed by the Silver Hand. It's sentimental more than powerful."
+  }
+]

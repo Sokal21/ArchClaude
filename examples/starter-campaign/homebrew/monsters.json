@@ -1,0 +1,57 @@
+[
+  {
+    "slug": "homebrew:spectral-guardian",
+    "name": "Spectral Guardian (Kael Dawnshield)",
+    "size": "Medium",
+    "type": "undead",
+    "alignment": "lawful neutral",
+    "armor_class": 12,
+    "hit_points": 30,
+    "hit_dice": "6d8",
+    "speed": { "walk": 0, "fly": 50 },
+    "strength": 1,
+    "dexterity": 14,
+    "constitution": 11,
+    "intelligence": 14,
+    "wisdom": 16,
+    "charisma": 15,
+    "damage_resistances": "acid, fire, lightning, thunder; bludgeoning, piercing, and slashing from nonmagical attacks",
+    "damage_immunities": "cold, necrotic, poison",
+    "condition_immunities": "charmed, exhaustion, grappled, paralyzed, petrified, poisoned, prone, restrained, unconscious",
+    "senses": "darkvision 60 ft., passive Perception 13",
+    "languages": "Common, Celestial",
+    "challenge_rating": "1",
+    "cr": 1,
+    "special_abilities": [
+      {
+        "name": "Incorporeal Movement",
+        "desc": "The guardian can move through other creatures and objects as if they were difficult terrain."
+      },
+      {
+        "name": "Bound Duty",
+        "desc": "The guardian is bound to protect the Vault. It cannot leave the Vault chambers. It will parley if addressed by name (Kael Dawnshield) — DC 15 Persuasion to convince it to stand down."
+      },
+      {
+        "name": "Sunlight Sensitivity",
+        "desc": "While in sunlight, the guardian has disadvantage on attack rolls."
+      }
+    ],
+    "actions": [
+      {
+        "name": "Life Drain",
+        "desc": "Melee Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 10 (3d6) necrotic damage. The target must succeed on a DC 12 Constitution saving throw or its hit point maximum is reduced by an amount equal to the damage taken.",
+        "attack_bonus": 4,
+        "damage_dice": "3d6"
+      }
+    ],
+    "reactions": [
+      {
+        "name": "Warning Strike",
+        "desc": "When a creature attempts to take the stone tablet from Chamber 2, the guardian can make one Life Drain attack against that creature."
+      }
+    ],
+    "legendary_actions": [],
+    "environments": ["underdark"],
+    "source": "homebrew"
+  }
+]
