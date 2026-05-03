@@ -8,6 +8,7 @@
 import { initCommand } from "./commands/init.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { reindexCommand } from "./commands/reindex.js";
+import { checkCommand } from "./commands/check.js";
 
 export function run(args: string[]): void {
   const [command, ...rest] = args;
@@ -21,6 +22,9 @@ export function run(args: string[]): void {
       break;
     case "reindex":
       reindexCommand(rest[0]);
+      break;
+    case "check":
+      checkCommand(rest[0]);
       break;
     case "--help":
     case "-h":
@@ -42,6 +46,7 @@ Usage:
   archclaude init <folder>     Create a new campaign folder
   archclaude doctor <folder>   Validate a campaign folder
   archclaude reindex <folder>  Re-index markdown into the database
+  archclaude check <folder>    Verify session readiness
   archclaude --help            Show this help
 `);
 }

@@ -38,10 +38,18 @@ import { join } from "node:path";
 
 async function main() {
   if (!isCachePopulated()) {
-    console.error(
-      "SRD cache not found. Run: pnpm --filter @archclaude/bestiary cache:pull",
-    );
-    process.exit(1);
+    console.error("SRD cache not found. Attempting auto-pull from Open5e...");
+    try {
+      const { pullCache } = await import("./cache.js");
+      await pullCache();
+      console.error("SRD cache populated successfully.");
+    } catch (err) {
+      console.error(
+        `Auto-pull failed: ${err instanceof Error ? err.message : err}\n` +
+        "Run manually: pnpm --filter @archclaude/bestiary cache:pull",
+      );
+      process.exit(1);
+    }
   }
 
   // Load all data into memory at startup (~2MB for SRD)

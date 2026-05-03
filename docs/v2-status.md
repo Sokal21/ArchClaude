@@ -86,12 +86,48 @@
 **Files to modify:**
 - `packages/map/src/index.ts` — add `ws.on("message")` handler for incoming player events
 
-### v2 Phase 4 — Data Quality (DEFERRED)
+### v2 Phase 4 — Data Visualization Dashboard (NEW)
+**Why:** All campaign data lives in SQLite (events, PCs, NPCs, quests, combats, memory chunks, seeds, secrets) and JSON files (SRD monsters, spells, conditions) but there's no way to browse it outside of MCP tool calls or raw SQL. A visual dashboard would let the DM review session history, browse the bestiary, inspect the event log, and monitor campaign state between sessions.
+
+**Approach: Metabase (no custom UI code)**
+
+Metabase connects to SQLite natively. One Docker container, point it at the campaign DB, get instant dashboards.
+
+**Setup:**
+```bash
+docker run -d -p 3000:3000 \
+  -v /Users/tomaslopez/Personal/ArchClaude/examples/starter-campaign:/campaign \
+  --name archclaude-metabase \
+  metabase/metabase
+```
+Then add the SQLite database at `/campaign/campaign.db` as a data source in Metabase.
+
+**Suggested dashboards:**
+1. **Campaign Overview** — session count, total events, PC status summary, active quests
+2. **Event Log** — filterable table of all events (type, source, timestamp, payload), timeline chart
+3. **Combat History** — combats by session, outcomes, rounds fought, damage dealt
+4. **PC Tracker** — HP over time, conditions applied/removed, death save history, spell slot usage
+5. **NPC Registry** — all NPCs with status, location, faction, introduction session
+6. **World Map** — locations by type/status, faction reputations
+7. **Memory Search** — browse memory chunks by kind, source file, tags
+8. **Seeds & Secrets** — planted/triggered seeds, hidden/revealed secrets
+
+**For the SRD bestiary** (JSON files, not in SQLite):
+- Option A: Import monsters.json/spells.json into the campaign SQLite as read-only tables (one-time script)
+- Option B: Use a separate SQLite DB at `~/.archclaude/srd-cache/bestiary.db` that Metabase also connects to
+- Option C: Keep using the Bestiary MCP for lookups, use Metabase only for campaign data
+
+**Files to create:**
+- `scripts/metabase-setup.sh` — Docker run command + initial config
+- `scripts/import-srd-to-sqlite.ts` — optional: import SRD JSON into a SQLite DB for Metabase browsing
+- `docs/metabase-setup.md` — setup guide with dashboard templates
+
+### v2 Phase 5 — Data Quality (DEFERRED)
 - Bestiary search tests + CR normalization
 - Runtime dependency checks for voice service
 - Graceful degradation for map MCP WebSocket port conflicts
 
-### v2 Phase 5 — Voice (DEFERRED)
+### v2 Phase 6 — Voice (DEFERRED)
 - Create `stt_bridge.py` for mic→faster-whisper pipeline
 - Fix TTS platform detection (macOS: `afplay`, Linux: `aplay`, cross-platform: `ffplay`)
 - Audio dependency checks
