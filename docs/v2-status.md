@@ -55,66 +55,40 @@
 - Migrated 55 `server.tool()` → `server.registerTool()` across all 3 MCP servers
 - Commit: `3232265`
 
+### v2 Phase 3 — Player UI Integration (DONE)
+- Migration 0003: action_queue table
+- ActionQueueDAL: enqueue, dequeue, peek, listPending, markProcessed, clearProcessed
+- 5 MCP tools: get_pending_actions, dequeue_action, submit_action, mark_action_processed, clear_processed_actions
+- Map WebSocket now handles incoming player/DM events and routes to action queue
+- Commit: `6bb27e1`
+
+### v2 Phase 4 — Metabase Dashboard (DONE)
+- SRD JSON → SQLite import script (322 monsters, 319 spells, 15 conditions)
+- Docker Compose for Metabase on port 3007
+- Two data sources: campaign.db (live) + bestiary.db (static)
+- Full setup guide at docs/metabase-setup.md
+- Commit: `ef0ec24`
+
 ---
 
 ## What's pending
 
-### v2 Phase 3 — Player UI Integration (NEXT)
-**Action queue:** SQLite table for player actions. Player UI → map WebSocket → action queue → Combat Director polls via `get_pending_actions`.
-
-**Files to create:**
-- `packages/state/src/migrations/0003_action_queue.sql`
-- `packages/state/src/dal/action-queue.ts`
-- `packages/state-mcp/src/tools/action-queue.ts`
-
-**Files to modify:**
-- `packages/map/src/index.ts` — add `ws.on("message")` handler for incoming player events
-
-### v2 Phase 4 — Data Visualization Dashboard (NEW)
-**Why:** All campaign data lives in SQLite (events, PCs, NPCs, quests, combats, memory chunks, seeds, secrets) and JSON files (SRD monsters, spells, conditions) but there's no way to browse it outside of MCP tool calls or raw SQL. A visual dashboard would let the DM review session history, browse the bestiary, inspect the event log, and monitor campaign state between sessions.
-
-**Approach: Metabase (no custom UI code)**
-
-Metabase connects to SQLite natively. One Docker container, point it at the campaign DB, get instant dashboards.
-
-**Setup:**
-```bash
-docker run -d -p 3000:3000 \
-  -v /Users/tomaslopez/Personal/ArchClaude/examples/starter-campaign:/campaign \
-  --name archclaude-metabase \
-  metabase/metabase
-```
-Then add the SQLite database at `/campaign/campaign.db` as a data source in Metabase.
-
-**Suggested dashboards:**
-1. **Campaign Overview** — session count, total events, PC status summary, active quests
-2. **Event Log** — filterable table of all events (type, source, timestamp, payload), timeline chart
-3. **Combat History** — combats by session, outcomes, rounds fought, damage dealt
-4. **PC Tracker** — HP over time, conditions applied/removed, death save history, spell slot usage
-5. **NPC Registry** — all NPCs with status, location, faction, introduction session
-6. **World Map** — locations by type/status, faction reputations
-7. **Memory Search** — browse memory chunks by kind, source file, tags
-8. **Seeds & Secrets** — planted/triggered seeds, hidden/revealed secrets
-
-**For the SRD bestiary** (JSON files, not in SQLite):
-- Option A: Import monsters.json/spells.json into the campaign SQLite as read-only tables (one-time script)
-- Option B: Use a separate SQLite DB at `~/.archclaude/srd-cache/bestiary.db` that Metabase also connects to
-- Option C: Keep using the Bestiary MCP for lookups, use Metabase only for campaign data
-
-**Files to create:**
-- `scripts/metabase-setup.sh` — Docker run command + initial config
-- `scripts/import-srd-to-sqlite.ts` — optional: import SRD JSON into a SQLite DB for Metabase browsing
-- `docs/metabase-setup.md` — setup guide with dashboard templates
-
-### v2 Phase 5 — Data Quality (DEFERRED)
+### v2 Phase 5 — Data Quality
 - Bestiary search tests + CR normalization
 - Runtime dependency checks for voice service
 - Graceful degradation for map MCP WebSocket port conflicts
 
-### v2 Phase 6 — Voice (DEFERRED)
+### v2 Phase 6 — Voice
 - Create `stt_bridge.py` for mic→faster-whisper pipeline
 - Fix TTS platform detection (macOS: `afplay`, Linux: `aplay`, cross-platform: `ffplay`)
 - Audio dependency checks
+
+### Future ideas
+- CI/CD pipeline (GitHub Actions for build + test)
+- Campaign export/import (zip a campaign folder for sharing)
+- Multi-campaign management CLI
+- Per-player phone view (read-only character sheet over LAN)
+- Undo/replay tooling surfaced in Player UI
 
 ---
 

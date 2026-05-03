@@ -7,10 +7,10 @@ services:
     ports:
       - "3007:3000"
     volumes:
-      # Campaign database (read-only for safety)
-      - ../examples/starter-campaign:/campaign:ro
+      # Campaign database (rw needed — SQLite requires write for WAL journal/locks)
+      - ../examples/starter-campaign:/campaign
       # SRD bestiary database
-      - ~/.archclaude/srd-cache:/srd-cache:ro
+      - ~/.archclaude/srd-cache:/srd-cache
       # Metabase internal data (persist settings/dashboards)
       - archclaude-metabase-data:/metabase-data
     environment:
