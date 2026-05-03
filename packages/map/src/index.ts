@@ -35,21 +35,22 @@ function getArgs(): { port: number; campaignDir?: string } {
 async function main() {
   const { port, campaignDir } = getArgs();
 
-  // Open the campaign DB for action queue writes (if campaign dir provided)
+  // Open the campaign DB (used for action queue writes + broadcast reads)
+  let campaignDb: InstanceType<typeof Database> | null = null;
   let actionQueueInsert: ((playerId: string, actionType: string, payloadJson: string, submittedAt: string) => void) | null = null;
   if (campaignDir) {
     try {
-      const db = new Database(join(campaignDir, "campaign.db"));
-      db.pragma("journal_mode = WAL");
-      const stmt = db.prepare(
+      campaignDb = new Database(join(campaignDir, "campaign.db"));
+      campaignDb.pragma("journal_mode = WAL");
+      const stmt = campaignDb.prepare(
         "INSERT INTO action_queue (player_id, action_type, payload_json, submitted_at) VALUES (?, ?, ?, ?)",
       );
       actionQueueInsert = (playerId, actionType, payloadJson, submittedAt) => {
         stmt.run(playerId, actionType, payloadJson, submittedAt);
       };
-      console.error("Action queue connected to campaign DB.");
+      console.error("Campaign DB connected (action queue + broadcast reads).");
     } catch {
-      console.error("Warning: Could not open campaign DB for action queue. Player UI actions will be broadcast-only.");
+      console.error("Warning: Could not open campaign DB. Action queue and DB-backed broadcasts unavailable.");
     }
   }
 
@@ -467,39 +468,57 @@ async function main() {
   server.registerTool(
     "broadcast_initiative",
     {
-      description: "Update the initiative display on the TV.",
-      inputSchema: {
-        order: z.array(z.object({
-          name: z.string(),
-          actor_kind: z.string(),
-          actor_id: z.number(),
-          init: z.number(),
-        })),
-        current_index: z.number().int(),
-      },
+      description: "Read initiative from the active combat in the DB and broadcast to the TV. Requires an active combat created via start_combat + set_initiative. WILL FAIL if no combat exists — you MUST call start_combat and set_initiative first.",
     },
-    async ({ order, current_index }) => {
-      store.forwardEvent("initiative_update", { order, current_index });
-      return { content: [{ type: "text", text: "Initiative display updated." }] };
+    async () => {
+      if (!campaignDb) {
+        return { content: [{ type: "text", text: "No campaign DB connected. Cannot read initiative." }] };
+      }
+      const combat = campaignDb.prepare("SELECT * FROM combats WHERE ended_at IS NULL ORDER BY id DESC LIMIT 1").get() as Record<string, unknown> | undefined;
+      if (!combat) {
+        return { content: [{ type: "text", text: "ERROR: No active combat in database. You MUST call start_combat first, then add_combatant for each enemy, then set_initiative. Do NOT skip these steps." }] };
+      }
+      if (!combat.initiative_json) {
+        return { content: [{ type: "text", text: "ERROR: Combat exists but no initiative set. Call set_initiative first." }] };
+      }
+      const initiative = JSON.parse(combat.initiative_json as string) as Array<{ actor_kind: string; actor_id: number; init: number }>;
+      // Resolve names
+      const order = initiative.map((entry) => {
+        let name = `${entry.actor_kind}#${entry.actor_id}`;
+        if (entry.actor_kind === "pc") {
+          const pc = campaignDb!.prepare("SELECT name FROM pcs WHERE id = ?").get(entry.actor_id) as { name: string } | undefined;
+          if (pc) name = pc.name;
+        } else {
+          const inst = campaignDb!.prepare("SELECT display_name FROM npc_instances WHERE id = ?").get(entry.actor_id) as { display_name: string } | undefined;
+          if (inst) name = inst.display_name;
+        }
+        return { name, actor_kind: entry.actor_kind, actor_id: entry.actor_id, init: entry.init };
+      });
+      store.forwardEvent("initiative_update", { order, current_index: combat.current_turn as number });
+      return { content: [{ type: "text", text: `Initiative broadcast (${order.length} combatants, round ${combat.round_number}).` }] };
     },
   );
 
   server.registerTool(
     "broadcast_party_status",
     {
-      description: "Update party HP/condition display on the TV.",
-      inputSchema: {
-        pcs: z.array(z.object({
-          name: z.string(),
-          hp: z.number(),
-          max_hp: z.number(),
-          conditions: z.array(z.string()),
-        })),
-      },
+      description: "Read party HP/conditions from the DB and broadcast to the TV. Reads live data — no input needed.",
     },
-    async ({ pcs }) => {
-      store.forwardEvent("party_status_update", { pcs });
-      return { content: [{ type: "text", text: "Party status display updated." }] };
+    async () => {
+      if (!campaignDb) {
+        return { content: [{ type: "text", text: "No campaign DB connected." }] };
+      }
+      const pcs = campaignDb.prepare("SELECT name, current_hp, max_hp, conditions_json FROM pcs WHERE active = 1").all() as Array<{
+        name: string; current_hp: number; max_hp: number; conditions_json: string | null;
+      }>;
+      const data = pcs.map((pc) => ({
+        name: pc.name,
+        hp: pc.current_hp,
+        max_hp: pc.max_hp,
+        conditions: pc.conditions_json ? JSON.parse(pc.conditions_json) : [],
+      }));
+      store.forwardEvent("party_status_update", { pcs: data });
+      return { content: [{ type: "text", text: `Party status broadcast (${pcs.length} PCs).` }] };
     },
   );
 

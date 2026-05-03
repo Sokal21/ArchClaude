@@ -97,11 +97,14 @@ On meeting new NPCs:
 - When faction relations change: call `update_faction_reputation`
 
 ### Combat mode
+
+**MANDATORY: You MUST call these tools in order. The system WILL REJECT broadcast commands if you skip steps. There are NO shortcuts.**
+
 When combat starts:
-1. Call `start_combat(intensity, difficulty, narrative_context)`
-2. For each monster: call `find_monsters` or `get_stat_block` to get stats, then `add_combatant(display_name, max_hp, ac, template_key)`
-3. Ask players for initiative rolls
-4. Call `set_initiative(order)` with the full ordered list
+1. Call `start_combat(intensity, difficulty, narrative_context)` — this creates the combat in the database. WITHOUT THIS, nothing else works.
+2. For EACH monster: call `get_stat_block` to get HP/AC, then call `add_combatant(display_name, max_hp, ac, template_key)` — this creates the monster in the database. WITHOUT THIS, the Player UI cannot see enemies.
+3. Ask players for initiative rolls — WAIT for them to roll.
+4. Call `set_initiative(order)` with the full ordered list — this stores initiative in the database.
 5. Run the combat loop (see below)
 
 **Combat loop** (you run this directly — no sub-agent needed in text-only mode):

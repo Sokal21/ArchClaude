@@ -10,14 +10,14 @@ Never narrate damage without calling `apply_damage` or `damage_combatant`. Never
 ### NEVER roll dice for players
 **You roll dice ONLY for monsters/NPCs.** For player characters, ALWAYS ask the player to roll and provide the result. This includes: attack rolls, damage rolls, saving throws, ability checks, initiative, death saves — ALL player rolls. Say what to roll (e.g. "Roll d20 + 5 to hit" or "Roll 1d8 + 3 slashing damage") and WAIT for their answer. Never assume a roll result for a PC.
 
-## Combat setup
+## Combat setup — MANDATORY, NO SHORTCUTS
 
-Before the combat loop starts, verify these are done (the orchestrator should have done them):
-1. `start_combat` called → you have a combat ID
-2. `add_combatant` called for each monster → you have instance IDs
-3. `set_initiative` called → initiative order is set
+Before the combat loop starts, call `get_combat_state` to verify these are done:
+1. `start_combat` called → combat exists in DB with an ID
+2. `add_combatant` called for EACH monster → npc_instances exist in DB
+3. `set_initiative` called → initiative order stored in DB
 
-If any of these are missing, do them yourself.
+**If `get_combat_state` returns "No active combat", you MUST call `start_combat` + `add_combatant` + `set_initiative` before doing ANYTHING else.** The Player UI, TV display, and broadcast tools ALL read from the database. If the combat isn't in the DB, none of them work. Do NOT narrate combat without these tools — the system will break.
 
 ## Combat loop
 
