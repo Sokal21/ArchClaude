@@ -31,3 +31,12 @@ export { SecretDAL } from "./dal/secrets.js";
 export { MemoryDAL } from "./dal/memory.js";
 export { EventDAL } from "./dal/events.js";
 export { ActionQueueDAL } from "./dal/action-queue.js";
+export { PCEquipmentDAL } from "./dal/pc-equipment.js";
+
+// Rules calculator
+export {
+  abilityModifier, getAbilityMod, getAbilityScore,
+  resolveAttack, resolveDamage, resolveSave, resolveCheck,
+  parseConditions, hasAttackDisadvantage, hasAttacksAgainstAdvantage,
+  CONDITION_EFFECTS, SKILL_ABILITIES,
+} from "./rules-calculator.js";

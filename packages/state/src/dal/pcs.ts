@@ -30,6 +30,13 @@ interface PCRow {
   death_save_successes: number;
   death_save_failures: number;
   concentrating_on: string | null;
+  str: number;
+  dex: number;
+  con: number;
+  int: number;
+  wis: number;
+  cha: number;
+  proficiency_bonus: number;
 }
 
 function rowToPC(row: PCRow): PC {

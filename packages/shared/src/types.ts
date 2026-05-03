@@ -80,7 +80,53 @@ export interface PC {
   death_save_successes: number;
   death_save_failures: number;
   concentrating_on: string | null;
+  str: number;
+  dex: number;
+  con: number;
+  int: number;
+  wis: number;
+  cha: number;
+  proficiency_bonus: number;
 }
+
+// ── PC Equipment ─────────────────────────────────────────────────────
+
+export interface PCWeapon {
+  id: number;
+  pc_id: number;
+  name: string;
+  slug: string | null;
+  to_hit: number;
+  damage_dice: string;
+  damage_bonus: number;
+  damage_type: string;
+  properties: string[] | null;
+  range_normal: number | null;
+  range_long: number | null;
+  is_magic: boolean;
+  notes: string | null;
+}
+
+export interface PCArmor {
+  id: number;
+  pc_id: number;
+  name: string;
+  slug: string | null;
+  base_ac: number;
+  ac_bonus: number;
+  type: string;
+  notes: string | null;
+}
+
+export interface PCSkill {
+  id: number;
+  pc_id: number;
+  skill: string;
+  ability: string;
+  proficient: number;
+}
+
+export type AbilityName = "str" | "dex" | "con" | "int" | "wis" | "cha";
 
 // ── NPCs ─────────────────────────────────────────────────────────────
 

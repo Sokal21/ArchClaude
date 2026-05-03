@@ -33,6 +33,8 @@ import { registerInventoryTools } from "./tools/inventory.js";
 import { registerSeedSecretTools } from "./tools/seeds-secrets.js";
 import { registerIndexerTools } from "./tools/indexer.js";
 import { registerActionQueueTools } from "./tools/action-queue.js";
+import { registerEquipmentTools } from "./tools/equipment.js";
+import { registerRulesTools } from "./tools/rules.js";
 
 function getCampaignDir(): string {
   // Check CLI args
@@ -74,6 +76,8 @@ async function main() {
   registerSeedSecretTools(server, campaignDb);
   registerIndexerTools(server, campaignDb);
   registerActionQueueTools(server, campaignDb);
+  registerEquipmentTools(server, campaignDb);
+  registerRulesTools(server, campaignDb);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
