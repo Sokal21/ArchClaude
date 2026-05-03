@@ -32,50 +32,34 @@
 
 ---
 
+### v2 Phase 1C — Integration tests (DONE)
+- 24 integration tests across 3 MCP servers (state-mcp: 13, map: 5, bestiary: 6)
+- Spawn real server processes, connect via StdioClientTransport, call tools, assert results
+- Total test count: 75 (was 51)
+- Commit: `3a674fd`
+
+### v2 Phase 1D — Bestiary auto-cache (DONE)
+- Auto-pulls SRD cache on first start instead of hard-exiting
+- Commit: `4cd536d`
+
+### v2 Phase 2A-B — Skill prompt hardening (DONE)
+- DM Orchestrator rewritten with mandatory tool usage, explicit command→tool mapping, session checklists
+- Combat Director rewritten with death save protocol, concentration saves, condition ticking
+- Commit: `4cd536d`
+
+### v2 Phase 2D — Session readiness check (DONE)
+- `archclaude check <folder>` — 9 checks, all passing on starter campaign
+- Commit: `4cd536d`
+
+### Codebase modernization (DONE)
+- Migrated 55 `server.tool()` → `server.registerTool()` across all 3 MCP servers
+- Commit: `3232265`
+
+---
+
 ## What's pending
 
-### v2 Phase 1C — Integration tests (HIGH PRIORITY)
-**Why:** Zero tests verify MCP servers work at runtime. Only unit tests exist.
-
-**What to do:**
-- Create `packages/state-mcp/src/__tests__/integration.test.ts` — spawn MCP server as child process, connect via `@modelcontextprotocol/sdk` Client + `StdioClientTransport`, call tools (start_session, list_pcs, apply_damage, start_combat, recall_memory), assert results
-- Create `packages/bestiary/src/__tests__/integration.test.ts` — find_monsters, get_stat_block (skip if SRD cache not populated)
-- Create `packages/map/src/__tests__/integration.test.ts` — create_map, place_token, move_token, measure_distance, apply_aoe
-- Add `@modelcontextprotocol/sdk` as devDependency to these packages
-- Beads issue: `ArchClaude-fu9`
-
-### v2 Phase 1D — Bestiary auto-cache (MEDIUM)
-**Why:** Bestiary MCP hard-exits if SRD cache is missing. Users must manually run `cache:pull`.
-
-**What to do:**
-- Modify `packages/bestiary/src/index.ts` — instead of `process.exit(1)` when cache missing, attempt `pullCache()` automatically with a warning. Fall back to exit if network fails.
-- Beads issue: `ArchClaude-3j9`
-
-### v2 Phase 2A-B — Skill prompt hardening + sub-agent spawning (HIGH)
-**Why:** Skills describe the behavior but lack explicit tool mappings and Task spawning instructions.
-
-**What to do:**
-- Modify `skills/dm-orchestrator/SKILL.md`:
-  - Add explicit command→tool table: `/dm secret` → `inject_dm_secret(topic, text)`, `/dm public` → `add_memory`, `/dm seed` → `plant_seed`, `/action` → resolve mechanically, `/say` → roleplay, `/roll` → skill check
-  - Add session start checklist as numbered tool calls
-  - Add concrete Task creation instructions for Combat Director (prompt template, context to pass, return contract)
-  - Add example user interactions with expected orchestrator behavior
-- Modify `skills/combat-director/SKILL.md`:
-  - Add Task entry contract (what inputs it receives from orchestrator, what it returns)
-  - Add concentration save protocol: "After damage to a concentrating PC, prompt CON save DC = max(10, damage/2), if failed call remove_condition + set_concentration(null)"
-  - Add death save protocol: "At 0 HP, call record_death_save per turn, 3 successes = stabilize, 3 failures = dead"
-  - Add `tick_conditions` call at the start of each round
-  - Add `get_pending_actions` polling during PC turns (for Player UI integration)
-- Beads issue: `ArchClaude-4uz`
-
-### v2 Phase 2D — Session readiness check CLI (LOW)
-**What to do:**
-- Create `packages/cli/src/commands/check.ts` — `archclaude check <folder>`
-- Validates: DB exists + has content, bestiary cache populated, `.claude/settings.json` has MCP config, all packages built (dist/ dirs exist)
-- Register in `packages/cli/src/cli.ts`
-- Beads issue: `ArchClaude-8q3`
-
-### v2 Phase 3 — Player UI Integration (DEFERRED)
+### v2 Phase 3 — Player UI Integration (NEXT)
 **Action queue:** SQLite table for player actions. Player UI → map WebSocket → action queue → Combat Director polls via `get_pending_actions`.
 
 **Files to create:**
