@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_database": "ArchClaude",
+  "project_id": "2c730864-4f18-4c85-9d5e-9e6e6143721e"
+}
