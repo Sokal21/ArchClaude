@@ -30,3 +30,4 @@ export { SeedDAL } from "./dal/seeds.js";
 export { SecretDAL } from "./dal/secrets.js";
 export { MemoryDAL } from "./dal/memory.js";
 export { EventDAL } from "./dal/events.js";
+export { ActionQueueDAL } from "./dal/action-queue.js";

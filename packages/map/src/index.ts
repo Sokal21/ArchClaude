@@ -11,7 +11,8 @@
  *   archclaude-map-mcp [--port 3100] [--campaign /path/to/campaign]
  */
 
-import { resolve } from "node:path";
+import { resolve, join } from "node:path";
+import Database from "better-sqlite3";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { WebSocketServer, WebSocket } from "ws";
@@ -34,6 +35,31 @@ function getArgs(): { port: number; campaignDir?: string } {
 async function main() {
   const { port, campaignDir } = getArgs();
 
+  // Open the campaign DB for action queue writes (if campaign dir provided)
+  let actionQueueInsert: ((playerId: string, actionType: string, payloadJson: string, submittedAt: string) => void) | null = null;
+  if (campaignDir) {
+    try {
+      const db = new Database(join(campaignDir, "campaign.db"));
+      db.pragma("journal_mode = WAL");
+      const stmt = db.prepare(
+        "INSERT INTO action_queue (player_id, action_type, payload_json, submitted_at) VALUES (?, ?, ?, ?)",
+      );
+      actionQueueInsert = (playerId, actionType, payloadJson, submittedAt) => {
+        stmt.run(playerId, actionType, payloadJson, submittedAt);
+      };
+      console.error("Action queue connected to campaign DB.");
+    } catch {
+      console.error("Warning: Could not open campaign DB for action queue. Player UI actions will be broadcast-only.");
+    }
+  }
+
+  /** Route an incoming WebSocket message to the action queue. */
+  function enqueueAction(playerId: string, actionType: string, payload: Record<string, unknown>): void {
+    if (actionQueueInsert) {
+      actionQueueInsert(playerId, actionType, JSON.stringify(payload), new Date().toISOString());
+    }
+  }
+
   // WebSocket server for the renderer
   const wss = new WebSocketServer({ port });
   const clients = new Set<WebSocket>();
@@ -41,6 +67,70 @@ async function main() {
   wss.on("connection", (ws) => {
     clients.add(ws);
     ws.on("close", () => clients.delete(ws));
+
+    // Handle incoming messages from Player UI / TV Display
+    ws.on("message", (data) => {
+      try {
+        const msg = JSON.parse(data.toString()) as {
+          type: string;
+          payload: Record<string, unknown>;
+        };
+
+        switch (msg.type) {
+          case "pc_action_submitted":
+            enqueueAction(
+              (msg.payload.player_id as string) ?? "unknown",
+              (msg.payload.action as string) ?? "other",
+              msg.payload,
+            );
+            // Also broadcast to other clients (TV display can show pending action)
+            broadcastEvent({
+              type: "player_action_submitted",
+              timestamp: new Date().toISOString(),
+              payload: msg.payload,
+            });
+            break;
+
+          case "pc_say":
+            enqueueAction(
+              (msg.payload.player_id as string) ?? "unknown",
+              "say",
+              msg.payload,
+            );
+            break;
+
+          case "pc_roll":
+            enqueueAction(
+              (msg.payload.player_id as string) ?? "unknown",
+              "roll",
+              msg.payload,
+            );
+            break;
+
+          case "pc_click_move":
+            enqueueAction(
+              (msg.payload.actor_kind as string) ?? "unknown",
+              "move",
+              msg.payload,
+            );
+            break;
+
+          // DM injections
+          case "dm_inject_public":
+          case "dm_inject_secret":
+          case "dm_inject_override":
+          case "dm_inject_seed":
+            enqueueAction("dm", "dm_inject", {
+              inject_type: msg.type.replace("dm_inject_", ""),
+              ...msg.payload,
+            });
+            break;
+        }
+      } catch {
+        // Ignore malformed messages
+      }
+    });
+
     // Send current map state on connect
     const map = store.getMap();
     if (map) {
