@@ -3,143 +3,160 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ArchClaude — Player Actions</title>
+  <title>ArchClaude — Combat</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="app">
     <header>
-      <h1>ArchClaude</h1>
+      <h1>ArchClaude Combat</h1>
       <div id="turn-indicator" class="hidden">Your Turn!</div>
     </header>
 
-    <!-- Initiative display -->
-    <section id="initiative-section">
-      <h2>Initiative</h2>
-      <div id="initiative-order"></div>
-    </section>
+    <div id="main-layout">
+      <!-- Left: combat info -->
+      <div id="left-panel">
+        <!-- PC selector -->
+        <section>
+          <h2>Select Character</h2>
+          <div id="pc-selector"></div>
+        </section>
 
-    <!-- Action composer -->
-    <section id="action-section">
-      <h2>Actions</h2>
+        <!-- Initiative -->
+        <section>
+          <h2>Initiative</h2>
+          <div id="initiative-order"></div>
+        </section>
 
-      <div id="action-tabs">
-        <button class="tab active" data-tab="attack">Attack</button>
-        <button class="tab" data-tab="spell">Spell</button>
-        <button class="tab" data-tab="ability">Ability</button>
-        <button class="tab" data-tab="other">Other</button>
-        <button class="tab" data-tab="say">Say</button>
+        <!-- Enemies -->
+        <section>
+          <h2>Enemies</h2>
+          <div id="enemy-list"></div>
+        </section>
       </div>
 
-      <!-- Attack panel -->
-      <div id="panel-attack" class="action-panel active">
-        <select id="attack-weapon">
-          <option value="">Select weapon...</option>
-        </select>
-        <select id="attack-target">
-          <option value="">Select target...</option>
-        </select>
-        <div class="roll-group">
-          <label>Attack Roll:</label>
-          <input type="number" id="attack-roll" placeholder="d20 + mod">
+      <!-- Center: actions -->
+      <div id="center-panel">
+        <!-- Result display -->
+        <div id="action-result" class="hidden"></div>
+
+        <!-- Action tabs -->
+        <div id="action-tabs">
+          <button class="tab active" data-tab="attack">Attack</button>
+          <button class="tab" data-tab="spell">Spell</button>
+          <button class="tab" data-tab="save">Save</button>
+          <button class="tab" data-tab="check">Check</button>
+          <button class="tab" data-tab="creative">Creative</button>
+          <button class="tab" data-tab="say">Say</button>
         </div>
-        <div class="roll-group">
-          <label>Damage:</label>
-          <input type="number" id="attack-damage" placeholder="damage roll">
-          <select id="attack-damage-type">
-            <option>slashing</option>
-            <option>piercing</option>
-            <option>bludgeoning</option>
-            <option>fire</option>
-            <option>cold</option>
-            <option>lightning</option>
-            <option>thunder</option>
-            <option>poison</option>
-            <option>acid</option>
-            <option>necrotic</option>
-            <option>radiant</option>
-            <option>force</option>
-            <option>psychic</option>
+
+        <!-- Attack panel -->
+        <div id="panel-attack" class="action-panel active">
+          <select id="attack-weapon"><option value="">Select weapon...</option></select>
+          <select id="attack-target"><option value="">Select target...</option></select>
+          <div class="roll-group">
+            <label>d20 roll:</label>
+            <input type="number" id="attack-roll" min="1" max="20" placeholder="Your d20 result">
+          </div>
+          <button class="submit-btn" onclick="submitAttack()">Resolve Attack</button>
+
+          <!-- Damage phase (shown after a hit) -->
+          <div id="damage-phase" class="hidden">
+            <div id="damage-info" class="damage-prompt"></div>
+            <div class="roll-group">
+              <label>Damage roll:</label>
+              <input type="number" id="damage-roll-input" placeholder="Your damage dice total">
+            </div>
+            <button class="submit-btn" onclick="submitDamage()">Apply Damage</button>
+          </div>
+        </div>
+
+        <!-- Spell panel -->
+        <div id="panel-spell" class="action-panel">
+          <input type="text" id="spell-name" placeholder="Spell name...">
+          <select id="spell-level">
+            <option value="cantrip">Cantrip</option>
+            <option value="1st">1st Level</option>
+            <option value="2nd">2nd Level</option>
+            <option value="3rd">3rd Level</option>
+            <option value="4th">4th Level</option>
+            <option value="5th">5th Level</option>
           </select>
+          <select id="spell-target"><option value="">Select target...</option></select>
+          <div class="roll-group">
+            <label>Spell attack / DC:</label>
+            <input type="number" id="spell-roll" placeholder="If applicable">
+          </div>
+          <div class="roll-group">
+            <label>Effect (dmg/heal):</label>
+            <input type="number" id="spell-effect" placeholder="Dice total">
+          </div>
+          <button class="submit-btn" onclick="submitSpell()">Cast Spell</button>
         </div>
-        <button class="submit-btn" onclick="submitAttack()">Submit Attack</button>
-      </div>
 
-      <!-- Spell panel -->
-      <div id="panel-spell" class="action-panel">
-        <input type="text" id="spell-name" placeholder="Spell name...">
-        <select id="spell-level">
-          <option value="cantrip">Cantrip</option>
-          <option value="1">1st Level</option>
-          <option value="2">2nd Level</option>
-          <option value="3">3rd Level</option>
-          <option value="4">4th Level</option>
-          <option value="5">5th Level</option>
-        </select>
-        <select id="spell-target">
-          <option value="">Select target...</option>
-        </select>
-        <div class="roll-group">
-          <label>Spell Attack / DC:</label>
-          <input type="number" id="spell-roll" placeholder="roll or DC">
+        <!-- Save panel -->
+        <div id="panel-save" class="action-panel">
+          <select id="save-ability">
+            <option value="str">Strength</option>
+            <option value="dex">Dexterity</option>
+            <option value="con">Constitution</option>
+            <option value="int">Intelligence</option>
+            <option value="wis">Wisdom</option>
+            <option value="cha">Charisma</option>
+          </select>
+          <div class="roll-group">
+            <label>d20 roll:</label>
+            <input type="number" id="save-roll" min="1" max="20" placeholder="Your d20 result">
+          </div>
+          <div class="roll-group">
+            <label>DC:</label>
+            <input type="number" id="save-dc" placeholder="Difficulty class">
+          </div>
+          <button class="submit-btn" onclick="submitSave()">Resolve Save</button>
         </div>
-        <div class="roll-group">
-          <label>Damage/Healing:</label>
-          <input type="number" id="spell-effect" placeholder="amount">
+
+        <!-- Check panel -->
+        <div id="panel-check" class="action-panel">
+          <select id="check-skill"></select>
+          <div class="roll-group">
+            <label>d20 roll:</label>
+            <input type="number" id="check-roll" min="1" max="20" placeholder="Your d20 result">
+          </div>
+          <button class="submit-btn" onclick="submitCheck()">Resolve Check</button>
         </div>
-        <button class="submit-btn" onclick="submitSpell()">Cast Spell</button>
-      </div>
 
-      <!-- Ability panel -->
-      <div id="panel-ability" class="action-panel">
-        <input type="text" id="ability-name" placeholder="Ability name...">
-        <textarea id="ability-desc" placeholder="Describe what you're doing..."></textarea>
-        <button class="submit-btn" onclick="submitAbility()">Use Ability</button>
-      </div>
+        <!-- Creative action panel -->
+        <div id="panel-creative" class="action-panel">
+          <textarea id="free-action-text" placeholder="Describe what you want to do... (e.g. 'I grab the chandelier and swing across the room')"></textarea>
+          <button class="submit-btn" onclick="submitFreeAction()">Send to DM</button>
+        </div>
 
-      <!-- Other panel -->
-      <div id="panel-other" class="action-panel">
-        <textarea id="other-action" placeholder="Describe your action (dash, dodge, disengage, help, hide, ready, search, use object)..."></textarea>
-        <button class="submit-btn" onclick="submitOther()">Submit Action</button>
-      </div>
+        <!-- Say panel -->
+        <div id="panel-say" class="action-panel">
+          <textarea id="say-text" placeholder='Speak in character...'></textarea>
+          <button class="submit-btn" onclick="submitSay()">Say It</button>
+        </div>
 
-      <!-- Say panel (in-character speech) -->
-      <div id="panel-say" class="action-panel">
-        <textarea id="say-text" placeholder='Speak in character... e.g. "Stand back, I\'ll handle this!"'></textarea>
-        <button class="submit-btn" onclick="submitSay()">Say It</button>
-      </div>
-
-      <!-- Quick rolls -->
-      <div id="quick-rolls">
-        <h3>Quick Rolls</h3>
-        <div id="saved-actions"></div>
-        <div class="roll-inline">
-          <input type="text" id="custom-roll" placeholder="e.g. 2d6+3 for damage">
-          <button onclick="submitRoll()">Roll</button>
+        <!-- Action log -->
+        <div id="action-log-section">
+          <h3>Action Log</h3>
+          <div id="action-log"></div>
         </div>
       </div>
-    </section>
 
-    <!-- Party status sidebar -->
-    <section id="party-section">
-      <h2>Party</h2>
-      <div id="party-status"></div>
-    </section>
+      <!-- Right: party status -->
+      <div id="right-panel">
+        <section>
+          <h2>Party</h2>
+          <div id="party-list"></div>
+        </section>
 
-    <!-- DM injection (for human DM at the table) -->
-    <section id="dm-section" class="hidden">
-      <h2>DM Controls</h2>
-      <div class="dm-row">
-        <select id="dm-type">
-          <option value="public">Public</option>
-          <option value="secret">Secret</option>
-          <option value="override">Override</option>
-          <option value="seed">Seed</option>
-        </select>
-        <textarea id="dm-text" placeholder="DM injection..."></textarea>
-        <button class="submit-btn" onclick="submitDM()">Inject</button>
+        <section>
+          <h2>Narration</h2>
+          <div id="narration-text"></div>
+        </section>
       </div>
-    </section>
+    </div>
   </div>
 
   <script src="app.js"></script>

@@ -56,6 +56,31 @@ importers:
         specifier: ^3.2.0
         version: 3.2.4(@types/node@25.6.0)
 
+  packages/combat-resolver:
+    dependencies:
+      '@archclaude/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@archclaude/state':
+        specifier: workspace:*
+        version: link:../state
+      ws:
+        specifier: ^8.18.0
+        version: 8.20.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      '@types/ws':
+        specifier: ^8.18.0
+        version: 8.18.1
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.0
+        version: 3.2.4(@types/node@22.19.17)
+
   packages/map:
     dependencies:
       better-sqlite3:
@@ -1875,7 +1900,7 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 22.19.17
+      '@types/node': 25.6.0
 
   '@vitest/expect@3.2.4':
     dependencies:
