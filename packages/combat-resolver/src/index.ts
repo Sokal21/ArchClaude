@@ -103,10 +103,58 @@ async function main() {
         res.end(JSON.stringify(data));
       };
 
+      // ── GET /api/pcs — always available, not just during combat ──
+      if (path === "/api/pcs" && req.method === "GET") {
+        const pcs = pcDal.listActive().map((pc) => {
+          const weapons = equipDal.listWeapons(pc.id);
+          return {
+            id: pc.id, name: pc.name, class: pc.class, level: pc.level,
+            hp: pc.current_hp, max_hp: pc.max_hp, ac: pc.ac,
+            conditions: pc.conditions_json ?? [],
+            weapons: weapons.map((w) => ({
+              id: w.id, name: w.name, to_hit: w.to_hit,
+              damage_dice: w.damage_dice, damage_bonus: w.damage_bonus,
+              damage_type: w.damage_type,
+            })),
+          };
+        });
+        return json({ pcs });
+      }
+
+      // ── POST /api/action — general player action (any mode, not just combat) ──
+      if (path === "/api/action" && req.method === "POST") {
+        const { pc_name, action_type, text } = body as {
+          pc_name: string; action_type: string; text: string;
+        };
+        const action = queueDal.enqueue({
+          player_id: pc_name as string,
+          action_type: (action_type as string) ?? "general",
+          payload: { text, pc_name },
+        });
+        broadcast("player_action_submitted", {
+          pc: pc_name, type: action_type, description: text,
+        });
+        return json({ queued: true, id: action.id });
+      }
+
+      // ── POST /api/broadcast — send text to TV display ──
+      if (path === "/api/broadcast" && req.method === "POST") {
+        const { text, intensity } = body as { text: string; intensity?: string };
+        broadcast("narration_text", { text, intensity: intensity ?? "normal" });
+        return json({ ok: true });
+      }
+
       // ── GET /api/combat/state ──
       if (path === "/api/combat/state" && req.method === "GET") {
         const combat = combatDal.getActive();
-        if (!combat) return json({ active: false });
+        if (!combat) return json({ active: false, pcs: pcDal.listActive().map((pc) => ({
+          id: pc.id, name: pc.name, class: pc.class, level: pc.level,
+          hp: pc.current_hp, max_hp: pc.max_hp, ac: pc.ac,
+          conditions: pc.conditions_json ?? [], weapons: equipDal.listWeapons(pc.id).map((w) => ({
+            id: w.id, name: w.name, to_hit: w.to_hit, damage_dice: w.damage_dice,
+            damage_bonus: w.damage_bonus, damage_type: w.damage_type,
+          })),
+        })) });
 
         const pcs = pcDal.listActive().map((pc) => {
           const weapons = equipDal.listWeapons(pc.id);

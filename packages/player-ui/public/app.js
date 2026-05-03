@@ -30,6 +30,11 @@ async function api(path, body) {
 
 async function refreshCombatState() {
   combatState = await api("/api/combat/state");
+  // Even outside combat, load PCs
+  if (!combatState.pcs || combatState.pcs.length === 0) {
+    const pcData = await api("/api/pcs");
+    combatState.pcs = pcData.pcs ?? [];
+  }
   renderCombatState();
 }
 
@@ -240,8 +245,8 @@ async function submitFreeAction() {
   const desc = document.getElementById("free-action-text").value;
   if (!desc) return showToast("Describe your action");
 
-  await api("/api/action/free", { pc_name: selectedPc.name, description: desc });
-  showResult("Creative action sent to AI DM.");
+  await api("/api/action", { pc_name: selectedPc.name, action_type: "action", text: desc });
+  showResult("Action sent to DM.");
   document.getElementById("free-action-text").value = "";
 }
 
@@ -250,9 +255,10 @@ async function submitSay() {
   const text = document.getElementById("say-text").value;
   if (!text) return showToast("Enter dialogue");
 
-  await api("/api/action/free", {
+  await api("/api/action", {
     pc_name: selectedPc.name,
-    description: `[In character] "${text}"`,
+    action_type: "say",
+    text: `${selectedPc.name} says: "${text}"`,
   });
   showResult(`${selectedPc.name}: "${text}"`);
   document.getElementById("say-text").value = "";

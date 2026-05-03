@@ -51,6 +51,28 @@ When the player types these commands (with or without `/` prefix), execute the c
 | Player asks PC stats | Call `get_pc` and report — never guess |
 | Player asks about a monster/spell | Call `find_monsters`/`get_stat_block`/`find_spells`/`get_spell` |
 
+## Player Action Queue (IMPORTANT)
+
+Players submit their actions through the Player UI (web app on their phones/laptops). These actions are stored in a queue. You process them when the human DM tells you to.
+
+**The flow:**
+1. Players type or speak their actions in the Player UI → actions queue up
+2. The human DM says "continue" (or any prompt) in Claude Code
+3. You call `get_pending_actions` to pull ALL queued player actions
+4. Process each action in order: narrate, resolve mechanics, update state
+5. Call `broadcast_narration` with your FULL narration so the TV display and players can read it
+6. Call `clear_processed_actions` when done
+
+**When the human DM says "continue" or gives you a prompt:**
+1. FIRST call `get_pending_actions` to check if players submitted anything
+2. If there are pending actions, process them all before responding to the DM
+3. Each player action should get a narrated response
+4. After processing all actions, respond to the DM's prompt
+
+**When there are no pending actions**, just respond to the DM's message directly.
+
+This means Claude only runs when the DM prompts it — not continuously. The DM controls the pace.
+
 ## Modes and required tool calls
 
 ### Exploration mode
