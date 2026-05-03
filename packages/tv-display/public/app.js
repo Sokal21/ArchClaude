@@ -1,284 +1,170 @@
 /**
- * TV Display client — connects to the Map MCP WebSocket and renders
- * the battle map, initiative tracker, party status, and narration.
+ * TV Display — shows DM narration, battle map, initiative, and party status.
  *
- * Architecture: The app is purely reactive. It receives events from the
- * WebSocket and updates the DOM/canvas. No state mutations originate here
- * except click-to-move (Phase 2.6), which sends an event back.
+ * Connects to Map MCP WebSocket (port 3100) for real-time events.
+ * The narration log is the primary feature — all Claude output and
+ * combat results appear here so the whole table can read along.
  */
 
 const WS_URL = `ws://${location.hostname}:3100`;
-const CELL_SIZE = 40; // pixels per grid cell
+const CELL_SIZE = 40;
 
 const TERRAIN_COLORS = {
-  open: "#1a2a3a",
-  difficult: "#2a3a2a",
-  wall: "#444",
-  water: "#1a3a5a",
-  pit: "#0a0a0a",
-  elevation: "#3a3a2a",
+  open: "#1a2a3a", difficult: "#2a3a2a", wall: "#444",
+  water: "#1a3a5a", pit: "#0a0a0a", elevation: "#3a3a2a",
 };
 
 const TOKEN_SIZE_PX = {
   tiny: 20, small: 30, medium: 36, large: 72, huge: 108, gargantuan: 144,
 };
 
-// ── State ──
+let mapState = null;
+let ws = null;
 
-let mapState = null;     // Current map data
-let selectedToken = null; // For click-to-move
-
-// ── DOM refs ──
+// ── DOM ──
 
 const canvas = document.getElementById("map-canvas");
 const ctx = canvas.getContext("2d");
 const noMapMsg = document.getElementById("no-map-message");
+const mainArea = document.getElementById("main-area");
 const initList = document.getElementById("initiative-list");
 const partyList = document.getElementById("party-list");
-const narrationText = document.getElementById("narration-text");
+const narrationLog = document.getElementById("narration-log");
+
+// Start in narration-only mode
+mainArea.classList.add("narration-only");
 
 // ── WebSocket ──
 
-let ws = null;
-let reconnectTimer = null;
-
 function connect() {
   ws = new WebSocket(WS_URL);
-
-  ws.onopen = () => {
-    console.log("Connected to Map MCP WebSocket");
-    if (reconnectTimer) clearInterval(reconnectTimer);
-    reconnectTimer = null;
-  };
-
-  ws.onmessage = (event) => {
-    const msg = JSON.parse(event.data);
-    handleEvent(msg);
-  };
-
+  ws.onopen = () => addNarration("system", "Connected to game server.");
+  ws.onmessage = (event) => handleEvent(JSON.parse(event.data));
   ws.onclose = () => {
-    console.log("WebSocket disconnected. Reconnecting...");
-    if (!reconnectTimer) {
-      reconnectTimer = setInterval(() => connect(), 3000);
-    }
+    addNarration("system", "Disconnected. Reconnecting...");
+    setTimeout(connect, 3000);
   };
-
-  ws.onerror = () => {
-    ws.close();
-  };
+  ws.onerror = () => ws.close();
 }
-
-// ── Event handling ──
 
 function handleEvent(event) {
   switch (event.type) {
+    case "narration_text":
+      addNarration("dm", event.payload.text, event.payload.intensity);
+      break;
+
+    case "combat_action_resolved":
+      formatCombatResult(event.payload);
+      break;
+
+    case "player_action_submitted":
+      addNarration("combat", `${event.payload.pc ?? "Player"}: ${event.payload.description ?? event.payload.type}`);
+      break;
+
     case "map_sync":
     case "map_created":
       mapState = event.payload;
       if (!mapState.terrain) mapState.terrain = [];
       if (!mapState.tokens) mapState.tokens = [];
-      // Convert terrain array to lookup
       mapState._terrainMap = {};
-      for (const cell of mapState.terrain) {
-        mapState._terrainMap[`${cell.x},${cell.y}`] = cell;
-      }
+      for (const cell of mapState.terrain) mapState._terrainMap[`${cell.x},${cell.y}`] = cell;
+      mainArea.classList.remove("narration-only");
       showMap();
       render();
       break;
 
     case "token_placed":
+      if (mapState) { mapState.tokens.push(event.payload.token); render(); }
+      break;
+    case "token_moved":
       if (mapState) {
-        mapState.tokens.push(event.payload.token);
-        render();
+        const t = mapState.tokens.find(t => t.id === event.payload.token_id);
+        if (t) { t.x = event.payload.to.x; t.y = event.payload.to.y; render(); }
       }
       break;
-
-    case "token_moved": {
-      if (!mapState) break;
-      const moved = mapState.tokens.find(t => t.id === event.payload.token_id);
-      if (moved) {
-        moved.x = event.payload.to.x;
-        moved.y = event.payload.to.y;
-        render();
-      }
-      break;
-    }
-
     case "token_removed":
-      if (mapState) {
-        mapState.tokens = mapState.tokens.filter(t => t.id !== event.payload.token_id);
-        render();
-      }
+      if (mapState) { mapState.tokens = mapState.tokens.filter(t => t.id !== event.payload.token_id); render(); }
       break;
-
-    case "token_visibility_changed": {
-      if (!mapState) break;
-      const tok = mapState.tokens.find(t => t.id === event.payload.token_id);
-      if (tok) tok.visible = event.payload.visible;
-      render();
-      break;
-    }
-
-    case "token_conditions_changed": {
-      if (!mapState) break;
-      const ct = mapState.tokens.find(t => t.id === event.payload.token_id);
-      if (ct) ct.conditions = event.payload.conditions;
-      render();
-      break;
-    }
-
     case "terrain_changed":
       if (mapState) {
-        for (const cell of event.payload.cells) {
-          mapState._terrainMap[`${cell.x},${cell.y}`] = cell;
-        }
-        // Also update the terrain array
+        for (const cell of event.payload.cells) mapState._terrainMap[`${cell.x},${cell.y}`] = cell;
         mapState.terrain = Object.values(mapState._terrainMap);
         render();
       }
       break;
-
     case "aoe_applied":
       if (mapState) {
         mapState._aoeHighlight = event.payload.cells;
         render();
-        // Clear highlight after 3 seconds
-        setTimeout(() => {
-          if (mapState) mapState._aoeHighlight = null;
-          render();
-        }, 3000);
+        setTimeout(() => { if (mapState) { mapState._aoeHighlight = null; render(); } }, 3000);
       }
       break;
-
     case "map_cleared":
-      if (mapState) {
-        mapState.tokens = [];
-        mapState.terrain = [];
-        mapState._terrainMap = {};
-        render();
-      }
+      if (mapState) { mapState.tokens = []; mapState.terrain = []; mapState._terrainMap = {}; render(); }
+      hasMap = false;
+      mainArea.classList.add("narration-only");
       break;
-
-    // ── HUD events ──
 
     case "initiative_update":
       renderInitiative(event.payload.order, event.payload.current_index);
       break;
-
     case "party_status_update":
       renderPartyStatus(event.payload.pcs);
       break;
-
-    case "narration_text":
-      renderNarration(event.payload.text, event.payload.intensity);
-      break;
   }
 }
 
-// ── Rendering ──
+// ── Narration log ──
 
-function showMap() {
-  canvas.style.display = "block";
-  noMapMsg.style.display = "none";
-  canvas.width = mapState.width * CELL_SIZE;
-  canvas.height = mapState.height * CELL_SIZE;
+function addNarration(type, text, intensity) {
+  const entry = document.createElement("div");
+  entry.className = `narration-entry${type === "combat" ? " combat-result" : ""}${intensity ? ` intensity-${intensity}` : ""}`;
+
+  const time = document.createElement("div");
+  time.className = "narr-time";
+  time.textContent = new Date().toLocaleTimeString();
+
+  const content = document.createElement("div");
+  content.className = "narr-text";
+  content.textContent = text;
+
+  entry.appendChild(time);
+  entry.appendChild(content);
+  narrationLog.appendChild(entry);
+  narrationLog.scrollTop = narrationLog.scrollHeight;
+
+  while (narrationLog.children.length > 100) narrationLog.removeChild(narrationLog.firstChild);
 }
 
-function render() {
-  if (!mapState) return;
-
-  // Clear
-  ctx.fillStyle = "#1a2a3a";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Draw grid
-  ctx.strokeStyle = "#2a3a4a";
-  ctx.lineWidth = 1;
-  for (let x = 0; x <= mapState.width; x++) {
-    ctx.beginPath();
-    ctx.moveTo(x * CELL_SIZE, 0);
-    ctx.lineTo(x * CELL_SIZE, canvas.height);
-    ctx.stroke();
-  }
-  for (let y = 0; y <= mapState.height; y++) {
-    ctx.beginPath();
-    ctx.moveTo(0, y * CELL_SIZE);
-    ctx.lineTo(canvas.width, y * CELL_SIZE);
-    ctx.stroke();
-  }
-
-  // Draw terrain
-  for (const cell of mapState.terrain) {
-    const color = TERRAIN_COLORS[cell.type] || TERRAIN_COLORS.open;
-    ctx.fillStyle = color;
-    ctx.fillRect(cell.x * CELL_SIZE + 1, cell.y * CELL_SIZE + 1, CELL_SIZE - 2, CELL_SIZE - 2);
-
-    // Cover indicators
-    if (cell.cover === "half") {
-      ctx.fillStyle = "rgba(255, 255, 0, 0.15)";
-      ctx.fillRect(cell.x * CELL_SIZE + 1, cell.y * CELL_SIZE + 1, CELL_SIZE - 2, CELL_SIZE - 2);
-    } else if (cell.cover === "three_quarter") {
-      ctx.fillStyle = "rgba(255, 165, 0, 0.2)";
-      ctx.fillRect(cell.x * CELL_SIZE + 1, cell.y * CELL_SIZE + 1, CELL_SIZE - 2, CELL_SIZE - 2);
-    }
-  }
-
-  // Draw AoE highlight
-  if (mapState._aoeHighlight) {
-    ctx.fillStyle = "rgba(233, 69, 96, 0.3)";
-    for (const cell of mapState._aoeHighlight) {
-      ctx.fillRect(cell.x * CELL_SIZE, cell.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-    }
-  }
-
-  // Draw tokens
-  for (const token of mapState.tokens) {
-    if (!token.visible) continue; // Don't show hidden tokens on TV
-
-    const cx = token.x * CELL_SIZE + CELL_SIZE / 2;
-    const cy = token.y * CELL_SIZE + CELL_SIZE / 2;
-    const radius = (TOKEN_SIZE_PX[token.size] || 36) / 2;
-
-    // Token circle
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.fillStyle = token.color;
-    ctx.fill();
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Label
-    ctx.fillStyle = "#fff";
-    ctx.font = "bold 11px sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(token.label, cx, cy);
-
-    // Condition indicators (small dots above token)
-    if (token.conditions && token.conditions.length > 0) {
-      const dotY = cy - radius - 6;
-      const startX = cx - (token.conditions.length - 1) * 5;
-      for (let i = 0; i < token.conditions.length; i++) {
-        ctx.beginPath();
-        ctx.arc(startX + i * 10, dotY, 3, 0, Math.PI * 2);
-        ctx.fillStyle = "#e94560";
-        ctx.fill();
-      }
-    }
+function formatCombatResult(payload) {
+  if (payload.type === "attack") {
+    const r = payload.result;
+    const hitText = r.critical ? "CRITICAL HIT!" : r.hit ? "HIT" : "Miss";
+    addNarration("combat", `${payload.attacker} → ${payload.weapon}: ${r.roll}+${r.modifier}=${r.total} vs AC ${r.target_ac} → ${hitText}`);
+  } else if (payload.type === "damage") {
+    const d = payload.damage;
+    addNarration("combat", `Damage: ${d.base_damage}+${d.modifier}=${d.final_damage}${d.resistance_applied ? ` (${d.resistance_applied})` : ""}`);
+  } else if (payload.type === "save") {
+    const s = payload.result;
+    addNarration("combat", `${payload.pc} ${payload.ability?.toUpperCase()} save: ${s.total} vs DC ${s.dc} → ${s.success ? "SUCCESS" : "FAIL"}`);
+  } else if (payload.type === "check") {
+    addNarration("combat", `${payload.pc} ${payload.skill}: ${payload.result.total}`);
   }
 }
+
+// ── Initiative ──
 
 function renderInitiative(order, currentIndex) {
   initList.innerHTML = "";
   for (let i = 0; i < order.length; i++) {
-    const entry = order[i];
     const div = document.createElement("div");
     div.className = "init-entry" + (i === currentIndex ? " active" : "");
-    div.innerHTML = `${entry.name} <span class="init-roll">${entry.init}</span>`;
+    div.innerHTML = `${order[i].name} <span class="init-roll">${order[i].init}</span>`;
     initList.appendChild(div);
   }
 }
+
+// ── Party status ──
 
 function renderPartyStatus(pcs) {
   partyList.innerHTML = "";
@@ -289,62 +175,56 @@ function renderPartyStatus(pcs) {
     card.className = "pc-card";
     card.innerHTML = `
       <div class="pc-name">${pc.name}</div>
-      <div class="hp-bar-container">
-        <div class="hp-bar" style="width: ${pct}%; background: ${barColor}"></div>
-      </div>
-      <div class="hp-text">${pc.hp} / ${pc.max_hp} HP</div>
+      <div class="hp-bar-container"><div class="hp-bar" style="width:${pct}%;background:${barColor}"></div></div>
+      <div class="hp-text">${pc.hp}/${pc.max_hp} HP</div>
       ${pc.conditions.length > 0 ? `<div class="conditions">${pc.conditions.join(", ")}</div>` : ""}
     `;
     partyList.appendChild(card);
   }
 }
 
-function renderNarration(text, intensity) {
-  narrationText.textContent = text;
-  narrationText.className = "";
-  if (intensity === "tense") narrationText.className = "intensity-tense";
-  if (intensity === "climax") narrationText.className = "intensity-climax";
+// ── Map rendering ──
+
+function showMap() {
+  canvas.style.display = "block";
+  noMapMsg.style.display = "none";
+  canvas.width = mapState.width * CELL_SIZE;
+  canvas.height = mapState.height * CELL_SIZE;
 }
 
-// ── Click-to-move (Phase 2.6) ──
-
-canvas.addEventListener("click", (e) => {
+function render() {
   if (!mapState) return;
-  const rect = canvas.getBoundingClientRect();
-  const x = Math.floor((e.clientX - rect.left) / CELL_SIZE);
-  const y = Math.floor((e.clientY - rect.top) / CELL_SIZE);
+  ctx.fillStyle = "#1a2a3a";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Find if a PC token was clicked
-  const clicked = mapState.tokens.find(t =>
-    t.actor_kind === "pc" && t.x === x && t.y === y && t.visible
-  );
+  ctx.strokeStyle = "#2a3a4a"; ctx.lineWidth = 1;
+  for (let x = 0; x <= mapState.width; x++) { ctx.beginPath(); ctx.moveTo(x*CELL_SIZE,0); ctx.lineTo(x*CELL_SIZE,canvas.height); ctx.stroke(); }
+  for (let y = 0; y <= mapState.height; y++) { ctx.beginPath(); ctx.moveTo(0,y*CELL_SIZE); ctx.lineTo(canvas.width,y*CELL_SIZE); ctx.stroke(); }
 
-  if (clicked) {
-    selectedToken = clicked;
-    canvas.style.cursor = "crosshair";
-    return;
+  for (const cell of mapState.terrain) {
+    ctx.fillStyle = TERRAIN_COLORS[cell.type] || TERRAIN_COLORS.open;
+    ctx.fillRect(cell.x*CELL_SIZE+1, cell.y*CELL_SIZE+1, CELL_SIZE-2, CELL_SIZE-2);
   }
 
-  // If a token is selected, send a move request
-  if (selectedToken) {
-    // Send click event back to the WebSocket (the orchestrator can pick this up)
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({
-        type: "pc_click_move",
-        payload: {
-          token_id: selectedToken.id,
-          actor_kind: selectedToken.actor_kind,
-          actor_id: selectedToken.actor_id,
-          from: { x: selectedToken.x, y: selectedToken.y },
-          to: { x, y },
-        },
-      }));
+  if (mapState._aoeHighlight) {
+    ctx.fillStyle = "rgba(233,69,96,0.3)";
+    for (const c of mapState._aoeHighlight) ctx.fillRect(c.x*CELL_SIZE, c.y*CELL_SIZE, CELL_SIZE, CELL_SIZE);
+  }
+
+  for (const token of mapState.tokens) {
+    if (!token.visible) continue;
+    const cx = token.x*CELL_SIZE+CELL_SIZE/2, cy = token.y*CELL_SIZE+CELL_SIZE/2;
+    const r = (TOKEN_SIZE_PX[token.size]||36)/2;
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle = token.color; ctx.fill();
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = "#fff"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(token.label, cx, cy);
+    if (token.conditions?.length) {
+      const dotY = cy-r-6, startX = cx-(token.conditions.length-1)*5;
+      for (let i=0; i<token.conditions.length; i++) { ctx.beginPath(); ctx.arc(startX+i*10,dotY,3,0,Math.PI*2); ctx.fillStyle="#e94560"; ctx.fill(); }
     }
-    selectedToken = null;
-    canvas.style.cursor = "default";
   }
-});
+}
 
 // ── Start ──
-
 connect();

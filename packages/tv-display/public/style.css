@@ -1,6 +1,6 @@
 /*
- * TV Display styles — designed for a wall-mounted TV at the game table.
- * Dark theme, large text, high contrast.
+ * TV Display — wall-mounted TV at the game table.
+ * Shows narration log, battle map, initiative, and party HP.
  */
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -15,36 +15,30 @@ body {
 
 #app {
   display: grid;
-  grid-template-columns: 1fr 220px;
-  grid-template-rows: 60px 1fr 100px;
+  grid-template-rows: 56px 1fr 80px;
   height: 100vh;
-  gap: 2px;
 }
 
-/* Initiative bar — top, spans full width */
+/* ── Initiative bar ── */
 #initiative-bar {
-  grid-column: 1 / -1;
   background: #16213e;
   display: flex;
   align-items: center;
   padding: 0 16px;
   gap: 16px;
   overflow-x: auto;
+  border-bottom: 1px solid #333;
 }
 
 #initiative-bar h3 {
   color: #e94560;
-  font-size: 14px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 1px;
   white-space: nowrap;
 }
 
-#initiative-list {
-  display: flex;
-  gap: 8px;
-  flex: 1;
-}
+#initiative-list { display: flex; gap: 8px; flex: 1; }
 
 .init-entry {
   background: #0f3460;
@@ -64,112 +58,105 @@ body {
   transform: scale(1.1);
 }
 
-.init-entry .init-roll {
-  font-size: 11px;
-  opacity: 0.7;
+/* ── Main area ── */
+#main-area {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
 }
 
-/* Map container */
+#main-area.narration-only {
+  grid-template-columns: 1fr;
+}
+#main-area.narration-only #map-container { display: none; }
+
 #map-container {
   background: #0f3460;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-right: 1px solid #333;
 }
 
-#map-canvas {
-  display: none;
+#map-canvas { display: none; }
+#no-map-message { color: #444; font-size: 20px; font-style: italic; }
+
+/* ── Narration panel ── */
+#narration-panel {
+  background: #121a2e;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-#no-map-message {
-  color: #555;
-  font-size: 24px;
-  font-style: italic;
-}
-
-/* Party sidebar */
-#party-sidebar {
-  background: #16213e;
-  padding: 12px;
-  overflow-y: auto;
-}
-
-#party-sidebar h3 {
+#narration-panel h3 {
   color: #e94560;
-  font-size: 14px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin-bottom: 12px;
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid #222;
 }
+
+#narration-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.narration-entry { animation: fadeIn 0.4s ease; }
+.narration-entry .narr-time { font-size: 10px; color: #555; margin-bottom: 2px; }
+.narration-entry .narr-text { font-size: 18px; line-height: 1.5; color: #ccc; }
+.narration-entry.intensity-terse .narr-text { font-size: 15px; color: #999; }
+.narration-entry.intensity-tense .narr-text { color: #e94560; font-size: 19px; }
+.narration-entry.intensity-climax .narr-text {
+  color: #ff6b6b; font-size: 22px; font-weight: bold;
+  text-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+}
+
+.narration-entry.combat-result .narr-text {
+  font-size: 14px; color: #8899aa; font-family: monospace;
+  padding: 6px 10px; background: #0a1020; border-radius: 4px;
+  border-left: 3px solid #e94560;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#narration-log::-webkit-scrollbar { width: 6px; }
+#narration-log::-webkit-scrollbar-track { background: transparent; }
+#narration-log::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+/* ── Party bar ── */
+#party-bar {
+  background: #16213e;
+  padding: 8px 16px;
+  border-top: 1px solid #333;
+  overflow-x: auto;
+}
+
+#party-list { display: flex; gap: 12px; }
 
 .pc-card {
   background: #0f3460;
   border-radius: 8px;
-  padding: 10px;
-  margin-bottom: 8px;
+  padding: 8px 14px;
+  min-width: 160px;
 }
 
-.pc-card .pc-name {
-  font-weight: bold;
-  font-size: 15px;
-  margin-bottom: 4px;
-}
+.pc-card .pc-name { font-weight: bold; font-size: 14px; margin-bottom: 4px; }
 
 .pc-card .hp-bar-container {
-  background: #333;
-  border-radius: 4px;
-  height: 12px;
-  overflow: hidden;
-  margin-bottom: 4px;
+  background: #333; border-radius: 4px; height: 10px;
+  overflow: hidden; margin-bottom: 3px;
 }
 
-.pc-card .hp-bar {
-  height: 100%;
-  border-radius: 4px;
-  transition: width 0.5s ease;
-}
-
-.pc-card .hp-text {
-  font-size: 12px;
-  color: #aaa;
-}
-
-.pc-card .conditions {
-  font-size: 11px;
-  color: #e94560;
-  margin-top: 4px;
-}
-
-/* Narration bar — bottom */
-#narration-bar {
-  grid-column: 1 / -1;
-  background: #16213e;
-  padding: 12px 24px;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-}
-
-#narration-text {
-  font-size: 18px;
-  line-height: 1.4;
-  font-style: italic;
-  color: #ccc;
-  max-height: 76px;
-  overflow: hidden;
-}
-
-#narration-text.intensity-tense {
-  color: #e94560;
-  font-size: 20px;
-}
-
-#narration-text.intensity-climax {
-  color: #ff6b6b;
-  font-size: 22px;
-  font-weight: bold;
-  text-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
-}
-
-/* Terrain colors on canvas are handled in JS */
+.pc-card .hp-bar { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+.pc-card .hp-text { font-size: 11px; color: #aaa; }
+.pc-card .conditions { font-size: 10px; color: #e94560; margin-top: 2px; }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ArchClaude — Battle Map</title>
+  <title>ArchClaude — Game Table</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,21 +14,23 @@
       <div id="initiative-list"></div>
     </div>
 
-    <!-- Main area: battle map -->
-    <div id="map-container">
-      <canvas id="map-canvas"></canvas>
-      <div id="no-map-message">No active battle map. Waiting for combat...</div>
+    <div id="main-area">
+      <!-- Left: battle map (shown during combat) -->
+      <div id="map-container">
+        <canvas id="map-canvas"></canvas>
+        <div id="no-map-message">Theater of the Mind</div>
+      </div>
+
+      <!-- Right: narration log (always visible) -->
+      <div id="narration-panel">
+        <h3>DM Narration</h3>
+        <div id="narration-log"></div>
+      </div>
     </div>
 
-    <!-- Right sidebar: party status -->
-    <div id="party-sidebar">
-      <h3>Party</h3>
+    <!-- Bottom: party status bar -->
+    <div id="party-bar">
       <div id="party-list"></div>
-    </div>
-
-    <!-- Bottom: narration feed -->
-    <div id="narration-bar">
-      <div id="narration-text"></div>
     </div>
   </div>
 
