@@ -9,6 +9,10 @@
 export { CampaignDB } from "./db.js";
 export { migrate } from "./migrate.js";
 export { indexCampaign } from "./indexer.js";
+export { buildEntityTagger } from "./entity-tagger.js";
+export { generateQueryVariants, buildFTS5Query } from "./query-rewrite.js";
+export { buildSecretFilter } from "./secret-filter.js";
+export { evaluateSeeds } from "./seed-evaluator.js";
 
 // DAL modules
 export { CampaignDAL } from "./dal/campaign.js";

@@ -1,0 +1,253 @@
+/*
+ * Player UI styles — designed for the PC running the TV display.
+ * Dark theme matching the TV display. Compact layout for a second monitor.
+ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+#app {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+header h1 {
+  color: #e94560;
+  font-size: 20px;
+}
+
+#turn-indicator {
+  background: #e94560;
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-weight: bold;
+  animation: pulse 1.5s infinite;
+}
+
+#turn-indicator.hidden { display: none; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+section {
+  background: #16213e;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+h2 {
+  color: #e94560;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+h3 {
+  color: #aaa;
+  font-size: 12px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+/* Tabs */
+#action-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.tab {
+  background: #0f3460;
+  border: none;
+  color: #aaa;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.tab.active {
+  background: #e94560;
+  color: #fff;
+}
+
+/* Action panels */
+.action-panel { display: none; }
+.action-panel.active { display: block; }
+
+.action-panel select,
+.action-panel input[type="text"],
+.action-panel input[type="number"],
+.action-panel textarea {
+  width: 100%;
+  background: #0f3460;
+  border: 1px solid #333;
+  color: #e0e0e0;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.action-panel textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+
+.roll-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.roll-group label {
+  font-size: 13px;
+  white-space: nowrap;
+  color: #aaa;
+  min-width: 100px;
+}
+
+.roll-group input { flex: 1; }
+.roll-group select { width: auto; flex: 0; }
+
+.submit-btn {
+  background: #e94560;
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.submit-btn:hover { background: #d63650; }
+
+/* Quick rolls */
+#quick-rolls {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #333;
+}
+
+.roll-inline {
+  display: flex;
+  gap: 8px;
+}
+
+.roll-inline input {
+  flex: 1;
+  background: #0f3460;
+  border: 1px solid #333;
+  color: #e0e0e0;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.roll-inline button {
+  background: #0f3460;
+  color: #e0e0e0;
+  border: 1px solid #333;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#saved-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.saved-action {
+  background: #0f3460;
+  border: 1px solid #333;
+  color: #e0e0e0;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.saved-action:hover { border-color: #e94560; }
+
+/* Initiative */
+#initiative-order {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.init-entry {
+  background: #0f3460;
+  border: 2px solid #333;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.init-entry.active {
+  border-color: #e94560;
+  background: #e94560;
+  color: #fff;
+}
+
+/* Party status */
+.pc-card {
+  background: #0f3460;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+.pc-name { font-weight: bold; margin-bottom: 4px; }
+
+.hp-bar-bg {
+  background: #333;
+  border-radius: 4px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.hp-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s;
+}
+
+.hp-text { font-size: 11px; color: #aaa; }
+.conditions { font-size: 11px; color: #e94560; }
+
+/* DM section */
+.dm-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dm-row select { width: 120px; }
+.dm-row textarea { flex: 1; min-width: 200px; }
+.dm-row .submit-btn { width: auto; }
