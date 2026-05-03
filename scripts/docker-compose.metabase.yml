@@ -1,0 +1,21 @@
+version: "3.9"
+
+services:
+  archclaude-metabase:
+    image: metabase/metabase:latest
+    container_name: archclaude-metabase
+    ports:
+      - "3007:3000"
+    volumes:
+      # Campaign database (read-only for safety)
+      - ../examples/starter-campaign:/campaign:ro
+      # SRD bestiary database
+      - ~/.archclaude/srd-cache:/srd-cache:ro
+      # Metabase internal data (persist settings/dashboards)
+      - archclaude-metabase-data:/metabase-data
+    environment:
+      MB_DB_FILE: /metabase-data/metabase.db
+    restart: unless-stopped
+
+volumes:
+  archclaude-metabase-data:
