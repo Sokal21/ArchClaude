@@ -29,10 +29,13 @@ import {
   loadMonsters,
   loadSpells,
   loadConditions,
+  loadWeapons,
+  loadArmor,
+  loadMagicItems,
   isCachePopulated,
 } from "./cache.js";
 import { searchMonsters, searchSpells } from "./search.js";
-import type { MonsterStatBlock, SpellDetail, ConditionDetail } from "./types.js";
+import type { MonsterStatBlock, SpellDetail, ConditionDetail, WeaponDetail, ArmorDetail, MagicItemDetail } from "./types.js";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -52,10 +55,13 @@ async function main() {
     }
   }
 
-  // Load all data into memory at startup (~2MB for SRD)
+  // Load all data into memory at startup
   const monsters = loadMonsters();
   const spells = loadSpells();
   const conditions = loadConditions();
+  const weapons = loadWeapons();
+  const armor = loadArmor();
+  const magicItems = loadMagicItems();
   const { resolve } = await import("node:path");
   const campaignDir = process.env.CAMPAIGN_DIR ? resolve(process.env.CAMPAIGN_DIR) : undefined;
 
@@ -208,6 +214,135 @@ async function main() {
       }
 
       return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  // ── Equipment tools ──
+
+  server.registerTool(
+    "find_weapons",
+    {
+      description: "Search SRD weapons. Returns name, damage dice, damage type, properties, category.",
+      inputSchema: {
+        name: z.string().optional().describe("Weapon name (partial match)"),
+        category: z.string().optional().describe("Category: 'Simple Melee', 'Martial Melee', 'Simple Ranged', 'Martial Ranged'"),
+        damage_type: z.string().optional().describe("Damage type: slashing, piercing, bludgeoning"),
+      },
+    },
+    async ({ name, category, damage_type }) => {
+      let results = weapons;
+      if (name) {
+        const n = name.toLowerCase();
+        results = results.filter((w) => w.name.toLowerCase().includes(n));
+      }
+      if (category) {
+        const c = category.toLowerCase();
+        results = results.filter((w) => w.category.toLowerCase().includes(c));
+      }
+      if (damage_type) {
+        const dt = damage_type.toLowerCase();
+        results = results.filter((w) => w.damage_type.toLowerCase() === dt);
+      }
+      if (results.length === 0) {
+        return { content: [{ type: "text", text: "No weapons match." }] };
+      }
+      return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
+    },
+  );
+
+  server.registerTool(
+    "get_weapon",
+    {
+      description: "Get full details for a specific weapon by slug.",
+      inputSchema: { slug: z.string() },
+    },
+    async ({ slug }) => {
+      const weapon = weapons.find((w) => w.slug === slug);
+      if (!weapon) {
+        return { content: [{ type: "text", text: `Weapon "${slug}" not found.` }] };
+      }
+      return { content: [{ type: "text", text: JSON.stringify(weapon, null, 2) }] };
+    },
+  );
+
+  server.registerTool(
+    "find_armor",
+    {
+      description: "Search SRD armor. Returns name, AC, category, stealth disadvantage.",
+      inputSchema: {
+        name: z.string().optional(),
+        category: z.string().optional().describe("Category: 'Light Armor', 'Medium Armor', 'Heavy Armor', 'Shield'"),
+      },
+    },
+    async ({ name, category }) => {
+      let results = armor;
+      if (name) {
+        const n = name.toLowerCase();
+        results = results.filter((a) => a.name.toLowerCase().includes(n));
+      }
+      if (category) {
+        const c = category.toLowerCase();
+        results = results.filter((a) => a.category.toLowerCase().includes(c));
+      }
+      if (results.length === 0) {
+        return { content: [{ type: "text", text: "No armor matches." }] };
+      }
+      return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
+    },
+  );
+
+  server.registerTool(
+    "find_magic_items",
+    {
+      description: "Search SRD magic items by name, type, or rarity.",
+      inputSchema: {
+        name: z.string().optional().describe("Item name (partial match)"),
+        type: z.string().optional().describe("Item type (Weapon, Armor, Wondrous item, etc)"),
+        rarity: z.string().optional().describe("Rarity: common, uncommon, rare, very rare, legendary"),
+        limit: z.number().optional(),
+      },
+    },
+    async ({ name, type, rarity, limit }) => {
+      let results = magicItems;
+      if (name) {
+        const n = name.toLowerCase();
+        results = results.filter((i) => i.name.toLowerCase().includes(n));
+      }
+      if (type) {
+        const t = type.toLowerCase();
+        results = results.filter((i) => i.type.toLowerCase().includes(t));
+      }
+      if (rarity) {
+        const r = rarity.toLowerCase();
+        results = results.filter((i) => i.rarity.toLowerCase() === r);
+      }
+      results = results.slice(0, limit ?? 20);
+      if (results.length === 0) {
+        return { content: [{ type: "text", text: "No magic items match." }] };
+      }
+      const summaries = results.map((i) => ({
+        slug: i.slug,
+        name: i.name,
+        type: i.type,
+        rarity: i.rarity,
+        attunement: i.requires_attunement || "no",
+      }));
+      return { content: [{ type: "text", text: JSON.stringify(summaries, null, 2) }] };
+    },
+  );
+
+  server.registerTool(
+    "get_magic_item",
+    {
+      description: "Get full description of a magic item by slug.",
+      inputSchema: { slug: z.string() },
+    },
+    async ({ slug }) => {
+      const item = magicItems.find((i) => i.slug === slug);
+      if (!item) {
+        return { content: [{ type: "text", text: `Magic item "${slug}" not found.` }] };
+      }
+      return { content: [{ type: "text", text: JSON.stringify(item, null, 2) }] };
     },
   );
 

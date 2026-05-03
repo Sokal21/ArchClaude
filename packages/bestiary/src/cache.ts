@@ -17,12 +17,15 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import type { MonsterStatBlock, SpellDetail, ConditionDetail } from "./types.js";
+import type { MonsterStatBlock, SpellDetail, ConditionDetail, WeaponDetail, ArmorDetail, MagicItemDetail } from "./types.js";
 
 const CACHE_DIR = join(homedir(), ".archclaude", "srd-cache");
 const MONSTERS_FILE = join(CACHE_DIR, "monsters.json");
 const SPELLS_FILE = join(CACHE_DIR, "spells.json");
 const CONDITIONS_FILE = join(CACHE_DIR, "conditions.json");
+const WEAPONS_FILE = join(CACHE_DIR, "weapons.json");
+const ARMOR_FILE = join(CACHE_DIR, "armor.json");
+const MAGIC_ITEMS_FILE = join(CACHE_DIR, "magicitems.json");
 
 function ensureCacheDir(): void {
   if (!existsSync(CACHE_DIR)) {
@@ -56,6 +59,9 @@ export async function pullCache(): Promise<{
   monsters: number;
   spells: number;
   conditions: number;
+  weapons: number;
+  armor: number;
+  magicItems: number;
 }> {
   ensureCacheDir();
 
@@ -80,10 +86,34 @@ export async function pullCache(): Promise<{
   writeFileSync(CONDITIONS_FILE, JSON.stringify(conditions, null, 2));
   console.log(`  ${conditions.length} conditions cached.`);
 
+  console.log("Pulling SRD weapons from Open5e...");
+  const weapons = await fetchAllPages<WeaponDetail>(
+    "https://api.open5e.com/v1/weapons/?document__slug=wotc-srd&limit=100",
+  );
+  writeFileSync(WEAPONS_FILE, JSON.stringify(weapons, null, 2));
+  console.log(`  ${weapons.length} weapons cached.`);
+
+  console.log("Pulling SRD armor from Open5e...");
+  const armor = await fetchAllPages<ArmorDetail>(
+    "https://api.open5e.com/v1/armor/?document__slug=wotc-srd&limit=100",
+  );
+  writeFileSync(ARMOR_FILE, JSON.stringify(armor, null, 2));
+  console.log(`  ${armor.length} armor cached.`);
+
+  console.log("Pulling SRD magic items from Open5e...");
+  const magicItems = await fetchAllPages<MagicItemDetail>(
+    "https://api.open5e.com/v1/magicitems/?document__slug=wotc-srd&limit=100",
+  );
+  writeFileSync(MAGIC_ITEMS_FILE, JSON.stringify(magicItems, null, 2));
+  console.log(`  ${magicItems.length} magic items cached.`);
+
   return {
     monsters: monsters.length,
     spells: spells.length,
     conditions: conditions.length,
+    weapons: weapons.length,
+    armor: armor.length,
+    magicItems: magicItems.length,
   };
 }
 
@@ -105,7 +135,25 @@ export function loadConditions(): ConditionDetail[] {
   return JSON.parse(readFileSync(CONDITIONS_FILE, "utf-8")) as ConditionDetail[];
 }
 
-/** Check if the SRD cache has been populated. */
+/** Load cached weapons. */
+export function loadWeapons(): WeaponDetail[] {
+  if (!existsSync(WEAPONS_FILE)) return [];
+  return JSON.parse(readFileSync(WEAPONS_FILE, "utf-8")) as WeaponDetail[];
+}
+
+/** Load cached armor. */
+export function loadArmor(): ArmorDetail[] {
+  if (!existsSync(ARMOR_FILE)) return [];
+  return JSON.parse(readFileSync(ARMOR_FILE, "utf-8")) as ArmorDetail[];
+}
+
+/** Load cached magic items. */
+export function loadMagicItems(): MagicItemDetail[] {
+  if (!existsSync(MAGIC_ITEMS_FILE)) return [];
+  return JSON.parse(readFileSync(MAGIC_ITEMS_FILE, "utf-8")) as MagicItemDetail[];
+}
+
+/** Check if the SRD cache has been populated (core files). */
 export function isCachePopulated(): boolean {
   return existsSync(MONSTERS_FILE) && existsSync(SPELLS_FILE) && existsSync(CONDITIONS_FILE);
 }

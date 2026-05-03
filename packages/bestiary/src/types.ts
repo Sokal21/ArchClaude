@@ -106,6 +106,40 @@ export interface ConditionDetail {
   desc: string;
 }
 
+export interface WeaponDetail {
+  slug: string;
+  name: string;
+  category: string;
+  cost: string;
+  damage_dice: string;
+  damage_type: string;
+  weight: string;
+  properties: string[];
+}
+
+export interface ArmorDetail {
+  slug: string;
+  name: string;
+  category: string;
+  base_ac: number;
+  plus_dex_mod: boolean;
+  plus_max: number;
+  ac_string: string;
+  strength_requirement: string | null;
+  cost: string;
+  weight: string;
+  stealth_disadvantage: boolean;
+}
+
+export interface MagicItemDetail {
+  slug: string;
+  name: string;
+  type: string;
+  desc: string;
+  rarity: string;
+  requires_attunement: string;
+}
+
 export interface SearchFilters {
   cr_min?: number;
   cr_max?: number;

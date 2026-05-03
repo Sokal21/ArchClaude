@@ -92,6 +92,44 @@ function main() {
       name TEXT NOT NULL,
       desc TEXT
     );
+
+    DROP TABLE IF EXISTS weapons;
+    DROP TABLE IF EXISTS armor;
+    DROP TABLE IF EXISTS magic_items;
+
+    CREATE TABLE weapons (
+      slug TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      category TEXT,
+      cost TEXT,
+      damage_dice TEXT,
+      damage_type TEXT,
+      weight TEXT,
+      properties_json TEXT
+    );
+
+    CREATE TABLE armor (
+      slug TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      category TEXT,
+      base_ac INTEGER,
+      plus_dex_mod INTEGER,
+      plus_max INTEGER,
+      ac_string TEXT,
+      strength_requirement TEXT,
+      cost TEXT,
+      weight TEXT,
+      stealth_disadvantage INTEGER
+    );
+
+    CREATE TABLE magic_items (
+      slug TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      type TEXT,
+      desc TEXT,
+      rarity TEXT,
+      requires_attunement TEXT
+    );
   `);
 
   // Import monsters
@@ -154,6 +192,51 @@ function main() {
   });
   insertConditions(conditions);
   console.log(`  ${conditions.length} conditions imported.`);
+
+  // Import weapons
+  if (existsSync(join(CACHE_DIR, "weapons.json"))) {
+    const weapons = JSON.parse(readFileSync(join(CACHE_DIR, "weapons.json"), "utf-8"));
+    const insertWeapon = db.prepare(
+      "INSERT INTO weapons (slug, name, category, cost, damage_dice, damage_type, weight, properties_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    );
+    const insertWeapons = db.transaction((data) => {
+      for (const w of data) {
+        insertWeapon.run(w.slug, w.name, w.category, w.cost, w.damage_dice, w.damage_type, w.weight, JSON.stringify(w.properties));
+      }
+    });
+    insertWeapons(weapons);
+    console.log(`  ${weapons.length} weapons imported.`);
+  }
+
+  // Import armor
+  if (existsSync(join(CACHE_DIR, "armor.json"))) {
+    const armorData = JSON.parse(readFileSync(join(CACHE_DIR, "armor.json"), "utf-8"));
+    const insertArmor = db.prepare(
+      "INSERT INTO armor (slug, name, category, base_ac, plus_dex_mod, plus_max, ac_string, strength_requirement, cost, weight, stealth_disadvantage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    );
+    const insertArmors = db.transaction((data) => {
+      for (const a of data) {
+        insertArmor.run(a.slug, a.name, a.category, a.base_ac, a.plus_dex_mod ? 1 : 0, a.plus_max, a.ac_string, a.strength_requirement, a.cost, a.weight, a.stealth_disadvantage ? 1 : 0);
+      }
+    });
+    insertArmors(armorData);
+    console.log(`  ${armorData.length} armor imported.`);
+  }
+
+  // Import magic items
+  if (existsSync(join(CACHE_DIR, "magicitems.json"))) {
+    const items = JSON.parse(readFileSync(join(CACHE_DIR, "magicitems.json"), "utf-8"));
+    const insertMagicItem = db.prepare(
+      "INSERT INTO magic_items (slug, name, type, desc, rarity, requires_attunement) VALUES (?, ?, ?, ?, ?, ?)"
+    );
+    const insertMagicItems = db.transaction((data) => {
+      for (const i of data) {
+        insertMagicItem.run(i.slug, i.name, i.type, i.desc, i.rarity, i.requires_attunement);
+      }
+    });
+    insertMagicItems(items);
+    console.log(`  ${items.length} magic items imported.`);
+  }
 
   db.close();
   console.log(`\nDone. Bestiary DB at: ${DB_PATH}`);
