@@ -139,6 +139,35 @@ h3 { color: #888; font-size: 11px; text-transform: uppercase; margin-bottom: 6px
 #narration-text.intensity-tense { color: #e94560; }
 #narration-text.intensity-climax { color: #ff6b6b; font-weight: bold; text-shadow: 0 0 8px rgba(233,69,96,0.4); }
 
+/* Voice input */
+.voice-input-group { display: flex; gap: 6px; margin-bottom: 8px; }
+.voice-input-group textarea { flex: 1; margin-bottom: 0; }
+
+.mic-btn {
+  background: #0f3460; border: 1px solid #333; border-radius: 6px;
+  color: #aaa; font-size: 20px; width: 44px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.mic-btn:hover { border-color: #e94560; }
+.mic-btn.recording { background: #e94560; color: #fff; animation: pulse 1s infinite; border-color: #e94560; }
+
+.voice-cmd-btn {
+  width: 100%; padding: 14px; background: #0f3460; border: 2px solid #333;
+  border-radius: 8px; color: #aaa; font-size: 16px; cursor: pointer;
+  margin-top: 12px;
+}
+.voice-cmd-btn:hover { border-color: #e94560; color: #ccc; }
+.voice-cmd-btn.recording { background: #e94560; color: #fff; border-color: #e94560; animation: pulse 1s infinite; }
+
+#voice-transcript {
+  background: #0a1020; border: 1px solid #333; border-radius: 6px;
+  padding: 10px; margin-top: 8px; font-style: italic; color: #8899aa;
+  font-size: 14px;
+}
+#voice-transcript.hidden { display: none; }
+
+#voice-command-section { margin-top: 12px; border-top: 1px solid #333; padding-top: 12px; }
+
 /* Action log */
 #action-log-section { margin-top: 16px; border-top: 1px solid #333; padding-top: 12px; }
 #action-log { max-height: 200px; overflow-y: auto; }

@@ -127,14 +127,28 @@
 
         <!-- Creative action panel -->
         <div id="panel-creative" class="action-panel">
-          <textarea id="free-action-text" placeholder="Describe what you want to do... (e.g. 'I grab the chandelier and swing across the room')"></textarea>
+          <div class="voice-input-group">
+            <textarea id="free-action-text" placeholder="Describe what you want to do... (e.g. 'I grab the chandelier and swing across the room')"></textarea>
+            <button class="mic-btn" onclick="voiceInput('free-action-text')" title="Speak">🎤</button>
+          </div>
           <button class="submit-btn" onclick="submitFreeAction()">Send to DM</button>
         </div>
 
         <!-- Say panel -->
         <div id="panel-say" class="action-panel">
-          <textarea id="say-text" placeholder='Speak in character...'></textarea>
+          <div class="voice-input-group">
+            <textarea id="say-text" placeholder='Speak in character...'></textarea>
+            <button class="mic-btn" onclick="voiceInput('say-text')" title="Speak">🎤</button>
+          </div>
           <button class="submit-btn" onclick="submitSay()">Say It</button>
+        </div>
+
+        <!-- Voice command (speak a full action) -->
+        <div id="voice-command-section">
+          <button class="voice-cmd-btn" onclick="voiceCommand()" id="voice-cmd-btn">
+            🎤 Voice Command
+          </button>
+          <div id="voice-transcript" class="hidden"></div>
         </div>
 
         <!-- Action log -->

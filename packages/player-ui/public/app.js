@@ -380,6 +380,114 @@ for (const s of skills) {
   skillSelect.appendChild(opt);
 }
 
+// ── Voice input (browser Speech Recognition API) ──
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let activeVoiceTarget = null;
+
+if (SpeechRecognition) {
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  // Detect language from browser — supports Spanish, English, etc.
+  recognition.lang = navigator.language || "en-US";
+
+  recognition.onresult = (event) => {
+    const transcript = Array.from(event.results)
+      .map(r => r[0].transcript)
+      .join("");
+
+    if (activeVoiceTarget) {
+      // Fill a specific text field
+      document.getElementById(activeVoiceTarget).value = transcript;
+    } else {
+      // Voice command mode — show transcript
+      document.getElementById("voice-transcript").textContent = transcript;
+      document.getElementById("voice-transcript").classList.remove("hidden");
+    }
+  };
+
+  recognition.onend = () => {
+    document.querySelectorAll(".mic-btn, .voice-cmd-btn").forEach(b => b.classList.remove("recording"));
+
+    if (!activeVoiceTarget) {
+      // Voice command finished — process the transcript
+      const transcript = document.getElementById("voice-transcript").textContent;
+      if (transcript) processVoiceCommand(transcript);
+    }
+    activeVoiceTarget = null;
+  };
+
+  recognition.onerror = (event) => {
+    if (event.error !== "no-speech") showToast(`Voice error: ${event.error}`);
+    document.querySelectorAll(".mic-btn, .voice-cmd-btn").forEach(b => b.classList.remove("recording"));
+    activeVoiceTarget = null;
+  };
+}
+
+/** Mic button on a text field — fills the field with speech. */
+function voiceInput(targetId) {
+  if (!recognition) return showToast("Speech recognition not supported in this browser");
+  activeVoiceTarget = targetId;
+  document.querySelector(`[onclick="voiceInput('${targetId}')"]`)?.classList.add("recording");
+  recognition.start();
+}
+
+/** Global voice command — speaks a full action and routes it. */
+function voiceCommand() {
+  if (!recognition) return showToast("Speech recognition not supported in this browser");
+  if (!selectedPc) return showToast("Select a PC first");
+  activeVoiceTarget = null;
+  document.getElementById("voice-cmd-btn").classList.add("recording");
+  document.getElementById("voice-transcript").textContent = "Listening...";
+  document.getElementById("voice-transcript").classList.remove("hidden");
+  recognition.start();
+}
+
+/** Parse a spoken command and route to the right action. */
+async function processVoiceCommand(text) {
+  if (!selectedPc) return;
+  const lower = text.toLowerCase();
+
+  // Try to extract dice roll from speech ("rolled a 14", "saqué 18", "got 15")
+  const rollMatch = lower.match(/(?:rolled?|saqué?|got|sacó?|tiré?)\s*(?:a\s+|un\s+)?(\d{1,2})/);
+
+  // Detect action type from keywords
+  if (lower.match(/\b(attack|atac|hit|golpe|peg)/)) {
+    // Fill attack roll if found
+    if (rollMatch) document.getElementById("attack-roll").value = rollMatch[1];
+    // Switch to attack tab
+    document.querySelector('[data-tab="attack"]').click();
+    showResult(`Voice: "${text}"${rollMatch ? ` → d20: ${rollMatch[1]}` : " → enter your d20 roll"}`);
+  } else if (lower.match(/\b(cast|lanz|spell|hechizo|conjur)/)) {
+    // Extract spell name (rough)
+    const spellMatch = text.match(/(?:cast|lanz[oa]?|conjur[oa]?)\s+(.+?)(?:\s+(?:at|on|a|en|contra)\s|$)/i);
+    if (spellMatch) document.getElementById("spell-name").value = spellMatch[1].trim();
+    document.querySelector('[data-tab="spell"]').click();
+    showResult(`Voice: "${text}"`);
+  } else if (lower.match(/\b(save|saving|salvación|tirada de salv)/)) {
+    if (rollMatch) document.getElementById("save-roll").value = rollMatch[1];
+    document.querySelector('[data-tab="save"]').click();
+    showResult(`Voice: "${text}"${rollMatch ? ` → d20: ${rollMatch[1]}` : ""}`);
+  } else if (lower.match(/\b(check|chequeo|prueba|perception|percepción|stealth|sigilo|athletics|atletismo)/)) {
+    if (rollMatch) document.getElementById("check-roll").value = rollMatch[1];
+    document.querySelector('[data-tab="check"]').click();
+    showResult(`Voice: "${text}"${rollMatch ? ` → d20: ${rollMatch[1]}` : ""}`);
+  } else if (lower.match(/\b(say|di[cg]|habla|speak)/)) {
+    document.getElementById("say-text").value = text;
+    document.querySelector('[data-tab="say"]').click();
+    showResult(`Voice: "${text}"`);
+  } else {
+    // Default: creative action
+    document.getElementById("free-action-text").value = text;
+    document.querySelector('[data-tab="creative"]').click();
+    showResult(`Voice: "${text}" → creative action`);
+  }
+
+  setTimeout(() => document.getElementById("voice-transcript").classList.add("hidden"), 3000);
+}
+
 // ── Start ──
 
 connectWs();
