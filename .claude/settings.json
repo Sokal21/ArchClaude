@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "archclaude-campaign-state": {
+      "command": "node",
+      "args": ["packages/state-mcp/dist/index.js", "--campaign", "./examples/starter-campaign"]
+    },
+    "archclaude-bestiary": {
+      "command": "node",
+      "args": ["packages/bestiary/dist/index.js"],
+      "env": {
+        "CAMPAIGN_DIR": "./examples/starter-campaign"
+      }
+    },
+    "archclaude-map": {
+      "command": "node",
+      "args": ["packages/map/dist/index.js", "--campaign", "./examples/starter-campaign", "--port", "3100"]
+    }
+  }
+}

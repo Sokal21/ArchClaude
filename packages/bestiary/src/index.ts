@@ -48,7 +48,8 @@ async function main() {
   const monsters = loadMonsters();
   const spells = loadSpells();
   const conditions = loadConditions();
-  const campaignDir = process.env.CAMPAIGN_DIR;
+  const { resolve } = await import("node:path");
+  const campaignDir = process.env.CAMPAIGN_DIR ? resolve(process.env.CAMPAIGN_DIR) : undefined;
 
   const server = new McpServer({
     name: "archclaude-bestiary",

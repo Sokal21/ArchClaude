@@ -22,6 +22,7 @@ import type { CampaignDB } from "./db.js";
 import { NPCDAL } from "./dal/npcs.js";
 import { LocationDAL } from "./dal/locations.js";
 import { SessionDAL } from "./dal/sessions.js";
+import { PCDAL } from "./dal/pcs.js";
 import { MemoryDAL } from "./dal/memory.js";
 import type { MemoryKind, NPCStatus, LocationType, LocationStatus } from "@archclaude/shared";
 
@@ -112,6 +113,7 @@ export function indexCampaign(campaignDb: CampaignDB): IndexResult {
   const result: IndexResult = { files_processed: 0, chunks_created: 0, errors: [] };
   const dir = campaignDb.campaignDir;
 
+  const pcDal = new PCDAL(campaignDb.db);
   const npcDal = new NPCDAL(campaignDb.db);
   const locationDal = new LocationDAL(campaignDb.db);
   const sessionDal = new SessionDAL(campaignDb.db);
@@ -203,6 +205,29 @@ export function indexCampaign(campaignDb: CampaignDB): IndexResult {
               summary_file: relPath,
               key_events_json: frontmatter.key_events as string[] | undefined,
             });
+          }
+        }
+
+        // Sync character frontmatter to PCs table
+        if (contentDir === "characters" && frontmatter.name) {
+          const existing = pcDal.getByName(frontmatter.name as string);
+          const pcData = {
+            name: frontmatter.name as string,
+            player_name: frontmatter.player_name as string | undefined,
+            class: frontmatter.class as string | undefined,
+            subclass: frontmatter.subclass as string | undefined,
+            level: (frontmatter.level as number) ?? 1,
+            max_hp: (frontmatter.max_hp as number) ?? 10,
+            current_hp: (frontmatter.current_hp as number) ?? (frontmatter.max_hp as number) ?? 10,
+            ac: (frontmatter.ac as number) ?? 10,
+            initiative_bonus: frontmatter.initiative_bonus as number | undefined,
+            speed_walk: frontmatter.speed_walk as number | undefined,
+            dossier_file: relPath,
+          };
+          if (existing) {
+            pcDal.update(existing.id, { ...pcData });
+          } else {
+            pcDal.create(pcData);
           }
         }
 

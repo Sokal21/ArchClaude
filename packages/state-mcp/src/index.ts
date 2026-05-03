@@ -17,6 +17,7 @@
  *   archclaude-state-mcp --campaign /path/to/campaign
  */
 
+import { resolve } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CampaignDB, migrate } from "@archclaude/state";
@@ -36,11 +37,11 @@ function getCampaignDir(): string {
   // Check CLI args
   const idx = process.argv.indexOf("--campaign");
   if (idx !== -1 && process.argv[idx + 1]) {
-    return process.argv[idx + 1];
+    return resolve(process.argv[idx + 1]);
   }
   // Check env var
   if (process.env.CAMPAIGN_DIR) {
-    return process.env.CAMPAIGN_DIR;
+    return resolve(process.env.CAMPAIGN_DIR);
   }
   console.error(
     "Usage: archclaude-state-mcp --campaign /path/to/campaign\n" +

@@ -9,6 +9,7 @@
 export { CampaignDB } from "./db.js";
 export { migrate } from "./migrate.js";
 export { indexCampaign } from "./indexer.js";
+export { loadSeedsAndSecrets } from "./seed-secret-loader.js";
 export { buildEntityTagger } from "./entity-tagger.js";
 export { generateQueryVariants, buildFTS5Query } from "./query-rewrite.js";
 export { buildSecretFilter } from "./secret-filter.js";

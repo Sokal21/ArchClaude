@@ -11,6 +11,7 @@
  *   archclaude-map-mcp [--port 3100] [--campaign /path/to/campaign]
  */
 
+import { resolve } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { WebSocketServer, WebSocket } from "ws";
@@ -24,9 +25,9 @@ function getArgs(): { port: number; campaignDir?: string } {
   const args = process.argv.slice(2);
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--port" && args[i + 1]) port = parseInt(args[i + 1], 10);
-    if (args[i] === "--campaign" && args[i + 1]) campaignDir = args[i + 1];
+    if (args[i] === "--campaign" && args[i + 1]) campaignDir = resolve(args[i + 1]);
   }
-  if (process.env.CAMPAIGN_DIR) campaignDir = process.env.CAMPAIGN_DIR;
+  if (process.env.CAMPAIGN_DIR) campaignDir = resolve(process.env.CAMPAIGN_DIR);
   return { port, campaignDir };
 }
 

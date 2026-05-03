@@ -11,7 +11,7 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, basename, resolve } from "node:path";
 import { CAMPAIGN_DIRS, CAMPAIGN_INIT_FILES } from "@archclaude/shared";
-import { CampaignDB, migrate, CampaignDAL, ClockDAL } from "@archclaude/state";
+import { CampaignDB, migrate, CampaignDAL, ClockDAL, indexCampaign, loadSeedsAndSecrets } from "@archclaude/state";
 
 export function initCommand(folder: string | undefined): void {
   if (!folder) {
@@ -69,6 +69,17 @@ export function initCommand(folder: string | undefined): void {
       clockDal.init();
       console.log(`  Clock initialized`);
     }
+
+    // Index markdown content into DB
+    const indexResult = indexCampaign(db);
+    console.log(`  Indexed: ${indexResult.files_processed} files, ${indexResult.chunks_created} memory chunks`);
+    if (indexResult.errors.length > 0) {
+      console.log(`  Index errors: ${indexResult.errors.join(", ")}`);
+    }
+
+    // Load seeds and secrets
+    const seedSecretResult = loadSeedsAndSecrets(db, campaignDir);
+    console.log(`  Loaded: ${seedSecretResult.seeds} seeds, ${seedSecretResult.secrets} secrets`);
   } finally {
     db.close();
   }
